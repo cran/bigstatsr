@@ -1,4 +1,4 @@
-6a5d58fde4d4fc7e7cab2f0f6163a05b *DESCRIPTION
+46a914766705375b3b9a52746c031a34 *DESCRIPTION
 ecff05e2f38240f74e39605ab36b66be *NAMESPACE
 a635a5ea71ce3391aee34f470b0b6068 *NEWS.md
 1ee3d5c52cec120e657e0e05c12b4f97 *R/AUC.R
@@ -118,7 +118,7 @@ ec6983b6b08742229a0a72023f0b8e42 *tests/testthat/helper-init.R
 39b5cf8917426d56480e58f7f369beec *tests/testthat/test-AUC.R
 56ada17759aa821bc45b3a67abf5ea2d *tests/testthat/test-CMSA.R
 143de79bd02f1e160eb90cd477e15c49 *tests/testthat/test-FBM-accessors.R
-b0d8240beb937413a1216fe93c2ede67 *tests/testthat/test-SVD.R
+187e30e7678254dd35b4ee729caa7203 *tests/testthat/test-SVD.R
 a63459f259eafbf63353f631ce319f20 *tests/testthat/test-apply.R
 434f8e4c3549cb0fe250a551a84478bc *tests/testthat/test-checkArgs.R
 672844ed4e72896bacfda9098b20b2b1 *tests/testthat/test-colstats.R
@@ -127,7 +127,7 @@ a63459f259eafbf63353f631ce319f20 *tests/testthat/test-apply.R
 fde3352c09249ce67d422aa5b99efecf *tests/testthat/test-counts.R
 e7eec3dd5eb0236fa5fee4c2ba1a553b *tests/testthat/test-crossprodSelf.R
 6830fa9647dba8d74ff4397d788fe8f0 *tests/testthat/test-prodVec.R
-c8cada3de6f39e61c30be57506840d7d *tests/testthat/test-randomSVD.R
+c42464da9cd7bdeeeda250d8b2079a74 *tests/testthat/test-randomSVD.R
 6e5b48de066a4ecd7a7b57ef9a824642 *tests/testthat/test-readBM.R
 b56b1fae2fff67b14e4f87242deb3d37 *tests/testthat/test-spLinReg.R
 32d12fc8b7b506b0494ea7f6dbba98e0 *tests/testthat/test-spLogReg.R
@@ -135,4 +135,4 @@ b56b1fae2fff67b14e4f87242deb3d37 *tests/testthat/test-spLinReg.R
 b426fff74bb5e0a0dc7a9d8dc972b113 *tests/testthat/test-tcrossprodSelf.R
 9bc60ae097c00d86ff80aa51a661a2d0 *tests/testthat/test-transpose.R
 4024075ceb43870df221a22b99e4b29d *tests/testthat/test-univLinReg.R
-8e536f59166f16508883cd2c229bcef5 *tests/testthat/test-univLogReg.R
+3ea21c5d198884373f9651969b0d3a75 *tests/testthat/test-univLogReg.R
