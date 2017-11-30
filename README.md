@@ -2,6 +2,7 @@
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/privefl/bigstatsr?branch=master&svg=true)](https://ci.appveyor.com/project/privefl/bigstatsr)
 [![Coverage Status](https://img.shields.io/codecov/c/github/privefl/bigstatsr/master.svg)](https://codecov.io/github/privefl/bigstatsr?branch=master)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/bigstatsr)](https://cran.r-project.org/package=bigstatsr)
+[![CRAN_downloads](http://cranlogs.r-pkg.org/badges/grand-total/bigstatsr)](https://cran.r-project.org/package=bigstatsr)
 
 
 # bigstatsr
@@ -20,7 +21,7 @@ __Note that most of the algorithms of this package don't handle missing values._
 
 ```r
 # For the CRAN version
-## Coming soon
+install.packages("bigstatsr")
 
 # For the current development version
 devtools::install_github("privefl/bigstatsr")
@@ -33,10 +34,14 @@ devtools::install_github("privefl/bigstatsr", ref = "v-bigmemory")
 
 As inputs, package **bigstatsr** uses [Filebacked Big Matrices (FBM)](https://privefl.github.io/bigstatsr/reference/FBM-class.html). 
 
-## Bug report
+## Bug report / Help
 
 Please open an issue if you find a bug.
 If you want help using **bigstatsr**, please post on Stack Overflow with the tag *bigstatsr* (not yet created). [How to make a great R reproducible example?](https://stackoverflow.com/q/5963269/6103040)
+
+- Parallelization: package **bigstatsr** uses package **foreach** for its parallelization tasks. Learn more on parallelism with **foreach** with [this tuto](https://privefl.github.io/blog/a-guide-to-parallelism-in-r/).
+
+- [Computing the null space of a bigmatrix in R](https://stackoverflow.com/questions/46253537/computing-the-null-space-of-a-bigmatrix-in-r/) (works if one dimension is not too large)
 
 
 ## Code of conduct

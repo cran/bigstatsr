@@ -2,8 +2,8 @@ Encoding: UTF-8
 Package: bigstatsr
 Type: Package
 Title: Statistical Tools for Filebacked Big Matrices
-Version: 0.2.2
-Date: 2017-08-30
+Version: 0.2.3
+Date: 2017-11-17
 Authors@R: c(
   person("Florian", "Privé", 
          email = "florian.prive.21@gmail.com", 
@@ -18,7 +18,7 @@ Description: Easy-to-use, efficient, flexible and scalable statistical tools.
   Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping.
   It provides for instance matrix operations, Principal Component Analysis,
   sparse linear supervised models, utility functions and more.
-  A scientific paper associated with this package is in preparation.
+  Preprint: <doi:10.1101/190926>.
 License: GPL-3
 LazyData: TRUE
 ByteCompile: TRUE
@@ -26,8 +26,8 @@ Depends: R (>= 3.3.2)
 Imports: cowplot, doParallel, foreach, ggplot2, glue, graphics,
         magrittr, Matrix, methods, parallel, Rcpp, RSpectra, stats
 LinkingTo: BH, Rcpp, RcppArmadillo
-Suggests: biglasso, bigmemory, covr, glmnet, grid, LiblineaR,
-        sparseSVM, testthat, viridis
+Suggests: spelling, biglasso, bigmemory, covr, glmnet, grid, LiblineaR,
+        ModelMetrics, sparseSVM, testthat, viridis
 RoxygenNote: 6.0.1
 URL: https://privefl.github.io/bigstatsr
 BugReports: https://github.com/privefl/bigstatsr/issues
@@ -39,10 +39,10 @@ Collate: 'AUC.R' 'CMSA.R' 'FBM-attach.R' 'crochet.R' 'FBM.R'
         'transpose.R' 'univLinReg.R' 'univLogReg.R' 'utils-assert.R'
         'utils-mult.R' 'utils.R' 'zzz.R'
 NeedsCompilation: yes
-Packaged: 2017-09-02 18:22:11 UTC; privef
+Packaged: 2017-11-30 12:58:17 UTC; Florian
 Author: Florian Privé [aut, cre],
   Michael Blum [ths],
   Hugues Aschard [ths]
 Maintainer: Florian Privé <florian.prive.21@gmail.com>
 Repository: CRAN
-Date/Publication: 2017-09-02 21:30:21 UTC
+Date/Publication: 2017-11-30 13:48:52 UTC

@@ -51,7 +51,10 @@ NULL
 
 ################################################################################
 
-AUC2 <- function(pred, y) auc_cpp(pred[y == 1], pred[y == 0])
+AUC2 <- function(pred, y) {
+  ord <- order(pred, y)
+  auc_sorted(pred[ord], y[ord])
+}
 
 round2 <- function(x, digits = NULL) `if`(is.null(digits), x, round(x, digits))
 
@@ -64,7 +67,7 @@ AUC <- function(pred, target, digits = NULL) {
 
   assert_lengths(pred, target)
 
-  y <- transform_levels(target)
+  y <- as.logical(transform_levels(target))
 
   round2(AUC2(pred, y), digits)
 }
@@ -74,11 +77,11 @@ AUC <- function(pred, target, digits = NULL) {
 #' @rdname AUC
 #' @name AUCBoot
 #' @export
-AUCBoot <- function(pred, target, nboot = 1e3, seed = NA, digits = NULL) {
+AUCBoot <- function(pred, target, nboot = 1e4, seed = NA, digits = NULL) {
 
   assert_lengths(pred, target)
 
-  y <- transform_levels(target)
+  y <- as.logical(transform_levels(target))
   n <- length(y)
 
   if (!is.na(seed)) {

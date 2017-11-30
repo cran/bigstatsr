@@ -45,7 +45,10 @@ Default is \code{NULL} and corresponds to only adding an intercept to each model
 }
 \description{
 Easy-to-use, efficient, flexible and scalable statistical tools.
-Use Filebacked Big Matrices matrices.
+Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping.
+It provides for instance matrix operations, Principal Component Analysis,
+sparse linear supervised models, utility functions and more.
+Preprint: <doi:10.1101/190926>.
 }
 \section{Matrix parallelization}{
 
