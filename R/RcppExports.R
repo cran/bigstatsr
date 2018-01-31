@@ -5,12 +5,16 @@ auc_sorted <- function(x, y) {
     .Call(`_bigstatsr_auc_sorted`, x, y)
 }
 
-COPY_cdfit_gaussian_hsr <- function(BM, y, row_idx, covar, lambda, L, lam_scale, lambda_min, alpha, user, eps, max_iter, m, dfmax, verbose) {
-    .Call(`_bigstatsr_COPY_cdfit_gaussian_hsr`, BM, y, row_idx, covar, lambda, L, lam_scale, lambda_min, alpha, user, eps, max_iter, m, dfmax, verbose)
+COPY_cdfit_gaussian_hsr <- function(BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min) {
+    .Call(`_bigstatsr_COPY_cdfit_gaussian_hsr`, BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min)
 }
 
-COPY_cdfit_binomial_hsr <- function(BM, y, row_idx, covar, lambda, L, lam_scale, lambda_min, alpha, user, eps, max_iter, m, dfmax, warn, verbose) {
-    .Call(`_bigstatsr_COPY_cdfit_binomial_hsr`, BM, y, row_idx, covar, lambda, L, lam_scale, lambda_min, alpha, user, eps, max_iter, m, dfmax, warn, verbose)
+COPY_cdfit_binomial_hsr <- function(BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min) {
+    .Call(`_bigstatsr_COPY_cdfit_binomial_hsr`, BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min)
+}
+
+bigsummaries <- function(BM, row_idx, col_idx, covar, y, which_set, K) {
+    .Call(`_bigstatsr_bigsummaries`, BM, row_idx, col_idx, covar, y, which_set, K)
 }
 
 bigcolvars <- function(BM, rowInd, colInd) {
@@ -87,10 +91,6 @@ replaceMatOne <- function(xpbm, rowInd, colInd, val) {
 
 replaceMat <- function(xpbm, rowInd, colInd, mat) {
     invisible(.Call(`_bigstatsr_replaceMat`, xpbm, rowInd, colInd, mat))
-}
-
-COPY_sparse_svm <- function(BM, y, row_idx, covar, lambda, pf, gamma, alpha, thresh, lambda_min, scrflag, dfmax, max_iter, user, message) {
-    .Call(`_bigstatsr_COPY_sparse_svm`, BM, y, row_idx, covar, lambda, pf, gamma, alpha, thresh, lambda_min, scrflag, dfmax, max_iter, user, message)
 }
 
 transpose3 <- function(BM, BM2) {

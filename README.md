@@ -25,14 +25,13 @@ install.packages("bigstatsr")
 
 # For the current development version
 devtools::install_github("privefl/bigstatsr")
-
-# For the first version (depending on package bigmemory)
-devtools::install_github("privefl/bigstatsr", ref = "v-bigmemory")
 ```
 
 ## Input format
 
 As inputs, package **bigstatsr** uses [Filebacked Big Matrices (FBM)](https://privefl.github.io/bigstatsr/reference/FBM-class.html). 
+
+To memory-map character text files, see [package **mmapcharr**](https://github.com/privefl/mmapcharr).
 
 ## Bug report / Help
 
