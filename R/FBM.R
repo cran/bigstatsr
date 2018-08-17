@@ -1,10 +1,49 @@
 ################################################################################
 
+#' Replace extension 'bk'
+#'
+#' @param path String with extension 'bk'.
+#' @param replacement Replacement of '.bk'. Default replaces by nothing.
+#'
+#' @return String with extension '.bk' replaced by `replacement`.
+#' @export
+#'
+#' @examples
+#' path <- "toto.bk"
+#' sub_bk(path)
+#' sub_bk(path, ".rds")
+sub_bk <- function(path, replacement = "") {
+  pattern <- "\\.bk$"
+  if (!grepl(pattern, path))
+    stop2("Path '%s' must have 'bk' extension.", path)
+  sub(pattern, replacement, path)
+}
+
+################################################################################
+
 #' Class FBM
 #'
 #' A reference class for storing and accessing matrix-like data stored in files
 #' on disk. This is very similar to Filebacked Big Matrices provided by the
-#' **bigmemory** package. Yet, the implementation is much more lighter.
+#' **bigmemory** package. Yet, the implementation is lighter.
+#'
+#' @details
+#' An FBM object has many field:
+#'   - `$address`: address of the external pointer containing the underlying
+#'     C++ object, to be used as a `XPtr<FBM>` in C++ code
+#'   - `$extptr`: use `$address` instead
+#'   - `$nrow`
+#'   - `$ncol`
+#'   - `$type`
+#'   - `$backingfile` or `$bk`: File with extension 'bk' that stores the numeric
+#'     data of the FBM
+#'   - `$rds`: 'rds' file (that may not exist) corresponding to the 'bk' file
+#'   - `$is_saved`: whether this object stored in `$rds`?
+#'
+#' And two methods:
+#'   - `$save()`: Save the FBM object in `$rds`. Returns the FBM.
+#'   - `add_columns(<ncol_add>)`: Add some columns to the FBM by appending the
+#'     backingfile with some data. Returns the FBM invisibly.
 #'
 #' @examples
 #' X <- FBM(10, 10)
@@ -27,69 +66,89 @@ FBM_RC <- methods::setRefClass(
 
   fields = list(
     extptr = "externalptr",
-    nrow = "integer",
-    ncol = "integer",
+    nrow = "numeric",
+    ncol = "numeric",
     type = "integer",
     backingfile = "character",
+    is_saved = "logical",
 
+    #### Active bindings
     # Same idea as in package phaverty/bigmemoryExtras
     address = function() {
       if (identical(.self$extptr, methods::new("externalptr"))) { # nil
-        .self$extptr <- getXPtrFBM(.self$backingfile,
+        .self$extptr <- getXPtrFBM(.self$bk,
                                    .self$nrow,
                                    .self$ncol,
                                    .self$type)
       }
       .self$extptr
-    }
+    },
+
+    bk = function() .self$backingfile,
+    rds = function() sub_bk(.self$bk, ".rds")
   ),
 
   methods = list(
-    initialize = function(nrow, ncol,
-                          type = c("double", "integer", "unsigned short",
-                                   "unsigned char", "raw"),
-                          init = NULL,
-                          backingfile = tempfile(),
-                          create_bk = TRUE,
-                          save = FALSE) {
+    initialize = function(nrow, ncol, type, init, backingfile, create_bk) {
 
-      c(nrow, ncol)  # check they are not missing
-      typeBM <- match.arg(type)
+      assert_int(nrow)
+      assert_int(ncol)
       bkfile <- path.expand(paste0(backingfile, ".bk"))
 
       if (create_bk) {
         assert_noexist(bkfile)
         assert_dir(dirname(bkfile))
-        createFile(bkfile, nrow, ncol, ALL.TYPES[[typeBM]])
+        createFile(bkfile, nrow, ncol, ALL.TYPES[[type]])
       } else {
         assert_exist(bkfile)
       }
 
       .self$backingfile <- normalizePath(bkfile)
-      .self$nrow        <- as.integer(nrow)
-      .self$ncol        <- as.integer(ncol)
-      .self$type        <- ALL.TYPES[typeBM]  # keep int and string
+      .self$is_saved    <- FALSE
+      .self$nrow        <- nrow
+      .self$ncol        <- ncol
+      .self$type        <- ALL.TYPES[type]  # keep int and string
 
       .self$address  # connect once
 
       if (!is.null(init)) .self[] <- init
 
-      if (save) .self$save()
+      .self
     },
 
     save = function() {
-      saveRDS(.self, sub("\\.bk$", ".rds", .self$backingfile))
+      saveRDS(.self, .self$rds)
+      .self$is_saved <- TRUE
+      .self
+    },
+
+    add_columns = function(ncol_add) {
+
+      assert_int(ncol_add)
+      size_before <- file.size(bkfile <- .self$bk)
+      addColumns(bkfile, .self$nrow, ncol_add, .self$type)
+
+      ncol_after <- .self$ncol + ncol_add
+      if ( (file.size(bkfile) / ncol_after) != (size_before / .self$ncol) )
+        warning2("Inconsistency of backingfile size after adding columns.")
+
+      .self$ncol <- ncol_after
+      .self$extptr <- methods::new("externalptr")  ## reinit pointer
+      if (.self$is_saved) .self$save()
+
+      invisible(.self)
     },
 
     show = function(typeBM) {
       if (missing(typeBM)) typeBM <- names(.self$type)
-      print(glue::glue("A Filebacked Big Matrix of type '{typeBM}'",
-                       " with {.self$nrow} rows and {.self$ncol} columns."))
+      cat(sprintf(
+        "A Filebacked Big Matrix of type '%s' with %s rows and %s columns.\n",
+        typeBM, .self$nrow, .self$ncol))
       invisible(.self)
     }
   )
 )
-FBM_RC$lock("nrow", "ncol", "type")
+FBM_RC$lock("nrow", "type")
 
 ################################################################################
 
@@ -116,8 +175,6 @@ FBM_RC$lock("nrow", "ncol", "type")
 #'   (which should be named by the `backingfile` parameter and have an
 #'   extension ".bk"). For example, this could be used to convert a filebacked
 #'   `big.matrix` from package **bigmemory** to a [FBM][FBM-class].
-#' @param save Whether to save the result object in an ".rds" file alongside
-#'   the backingfile. Default is `FALSE`.
 #'
 #' @rdname FBM-class
 #'
@@ -128,10 +185,39 @@ FBM <- function(nrow, ncol,
                          "unsigned char", "raw"),
                 init = NULL,
                 backingfile = tempfile(),
-                create_bk = TRUE,
-                save = FALSE) {
+                create_bk = TRUE) {
 
+  type <- match.arg(type)
   do.call(methods::new, args = c(Class = "FBM", as.list(environment())))
+}
+
+#' Convert to FBM
+#'
+#' Convert a matrix (or a data frame) to an FBM.
+#'
+#' @param x A matrix or an data frame (2-dimensional data).
+#'
+#' @rdname FBM-class
+#' @export
+#'
+#' @seealso [big_copy]
+#'
+#' @examples
+#' X <- FBM(150, 5)
+#' X[] <- iris   ## you can replace with a df (factors -> integers)
+#' X2 <- as_FBM(iris)
+#' identical(X[], X2[])
+as_FBM <- function(x, type = c("double", "integer", "unsigned short",
+                               "unsigned char", "raw"),
+                   backingfile = tempfile()) {
+
+  if (is.matrix(x) || is.data.frame(x)) {
+    FBM(nrow = nrow(x), ncol = ncol(x), init = x,
+        type = type, backingfile = backingfile)
+  } else {
+    stop2("'as_FBM' is not implemented for class '%s'. %s",
+          class(x), "Feel free to open an issue.")
+  }
 }
 
 ################################################################################
@@ -179,8 +265,9 @@ setMethod(
   '[<-', signature(x = "FBM"),
   Replace(
     replace_vector = function(x, i, value) {
+
       if (length(value) == 1) {
-        replaceVecOne(x$address, i, value)
+        replaceVecOne(x$address, i, value[1])
       } else if (length(value) == length(i)) {
         replaceVec(x$address, i, value)
       } else {
@@ -189,17 +276,30 @@ setMethod(
     },
 
     replace_matrix = function(x, i, j, value) {
-      if (length(value) == 1) {
-        replaceMatOne(x$address, i, j, value)
+
+      .dim <- c(length(i), length(j))
+      if (is.data.frame(value)) {
+
+        if (identical(dim(value), .dim)) {              ## data.frame
+          return(replaceDF(x$address, i, j, value))
+        }
+
       } else {
-        .dim <- c(length(i), length(j))
-        if (length(value) == prod(.dim)) {
-          dim(value) <- .dim
-          replaceMat(x$address, i, j, value)
-        } else {
-          stop2("'value' must be unique or of the dimension of 'x[i, j]'.")
+
+        if (length(value) == 1)                         ## scalar
+          return(replaceMatOne(x$address, i, j, value[1]))
+
+        if (is.null(dim(value))) {                      ## vector
+          if (length(value) == prod(.dim)) {
+            dim(value) <- .dim
+            return(replaceMat(x$address, i, j, value))
+          }
+        } else if (identical(dim(value), .dim)) {       ## matrix
+          return(replaceMat(x$address, i, j, value))
         }
       }
+
+      stop2("'value' must be unique or of the dimension of 'x[i, j]'.")
     }
   )
 )

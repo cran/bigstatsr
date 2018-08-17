@@ -1,27 +1,27 @@
 ################################################################################
 
-warn_downcast <- function(from, to) {
+printf <- function(...) cat(sprintf(...))
+message2 <- function(...) message(sprintf(...))
+warning2 <- function(...) warning(sprintf(...), call. = FALSE)
+stop2 <- function(...) stop(sprintf(...), call. = FALSE)
 
-  if (getOption("bigstatsr.typecast.warning")) {
+################################################################################
 
-    from.type <- typeof(from)
-    to.type   <- typeof(to)
+#' Temporarily disable downcast warning
+#'
+#' @param expr The expression to evaluate without downcast warning.
+#'
+#' @return The result of the evaluated expression.
+#' @export
+#'
+#' @examples
+#' without_downcast_warning(FBM(10, 10, type = "integer", init = 1.5))
+without_downcast_warning <- function(expr) {
 
-    from.type.int <- try(ALL.TYPES[[from.type]], silent = TRUE)
-    if (class(from.type.int) == "try-error") {
-      warning(glue::glue(
-        "The type of the input is unknown.\n",
-        "Assignment could possibly down cast from {from.type} to {to.type}.\n",
-        "Hint: To remove this warning, use ",
-        "options(bigstatsr.typecast.warning = FALSE)."), call. = FALSE)
-    } else {
-      if (from.type.int > ALL.TYPES[[to.type]])
-        warning(glue::glue(
-          "Assignment will down cast from {from.type} to {to.type}.\n",
-          "Hint: To remove this warning, use ",
-          "options(bigstatsr.typecast.warning = FALSE)."), call. = FALSE)
-    }
-  }
+  opt.save <- options(bigstatsr.downcast.warning = FALSE)
+  on.exit(options(opt.save), add = TRUE)
+
+  eval.parent(substitute(expr))
 }
 
 ################################################################################
@@ -97,7 +97,7 @@ assert_lengths <- function(...) {
   lengths <- lengths(list(...))
   if (length(lengths) > 1) {
     if (any(diff(lengths) != 0))
-      stop2("Incompatibility between dimensions.")
+      stop2(GET_ERROR_DIM())
   } else {
     stop2("You should check the lengths of at least two elements.")
   }
@@ -107,7 +107,7 @@ assert_lengths <- function(...) {
 
 # INTEGERS
 assert_int <- function(x) {
-  if (any(x != as.integer(x)))
+  if (!is.null(x) && any(x != trunc(x)))
     stop2("'%s' should contain only integers.", deparse(substitute(x)))
 }
 
@@ -122,17 +122,20 @@ assert_pos <- function(x)  {
 ################################################################################
 
 # 0s AND 1s
-assert_01 <- function(x, type)  {
+assert_01 <- function(x)  {
   if (!all(x %in% 0:1))
     stop2("'%s' should be composed only of 0s and 1s.", deparse(substitute(x)))
 }
 
-################################################################################
+assert_multiple <- function(x) {
 
-# TYPEOF
-assert_type <- function(x, type)  {
-  if (typeof(x) != type)
-    stop2("'%s' is not of type '%s'.", deparse(substitute(x)), type)
+  nuniq <- length(unique(x))
+
+  if (nuniq < 2) {
+    stop2("'%s' should be composed of different values.", deparse(substitute(x)))
+  } else if (nuniq == 2) {
+    warning2("'%s' is composed of only two different levels.", deparse(substitute(x)))
+  }
 }
 
 ################################################################################
@@ -180,12 +183,12 @@ assert_noexist <- function(file) {
 
 ################################################################################
 
-# EXTENSION
-assert_ext <- function(file, ext) {
-  ext.file <- tools::file_ext(file)
-  if (ext.file != ext)
-    stop2("Extension '.%s' not supported, requires '.%s' instead.",
-          ext.file, ext)
+# ... not used
+assert_nodots <- function() {
+
+  list_dots <- eval(parse(text = "list(...)"), parent.frame())
+  if (!identical(list_dots, list()))
+    stop2("Argument '%s' not used.", names(list_dots[1]))
 }
 
 ################################################################################

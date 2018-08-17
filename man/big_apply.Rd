@@ -4,8 +4,8 @@
 \alias{big_apply}
 \title{Split-Apply-Combine}
 \usage{
-big_apply(X, a.FUN, a.combine, ind = cols_along(X), ncores = 1,
-  block.size = block_size(nrow(X), ncores), ...)
+big_apply(X, a.FUN, a.combine = NULL, ind = cols_along(X),
+  ncores = 1, block.size = block_size(nrow(X), ncores), ...)
 }
 \arguments{
 \item{X}{A \link[=FBM-class]{FBM}.}
@@ -16,13 +16,12 @@ It must take a \link[=FBM-class]{Filebacked Big Matrix} as first argument and
 For example, if you want to apply a function to \code{X[ind.row, ind.col]},
 you may use \code{X[ind.row, ind.col[ind]]} in \code{a.FUN}.}
 
-\item{a.combine}{function that is used by \link{foreach} to process the tasks
-results as they generated. This can be specified as either a function or a
-non-empty character string naming the function. Specifying 'c' is useful
-for concatenating the results into a vector, for example.
-The values 'cbind' and 'rbind' can combine vectors into a matrix.
-The values '+' and '*' can be used to process numeric data.
-By default, the results are returned in a list.}
+\item{a.combine}{Function to combine the results with \code{do.call}.
+This function should accept multiple arguments (\code{...}). For example, you
+can use \code{c}, \code{cbind}, \code{rbind}. This package also provides function \code{plus}
+to add multiple arguments together. The default is \code{NULL}, in which case
+the results are not combined and are returned as a list, each element being
+the result of a block.}
 
 \item{ind}{Initial vector of subsetting indices.
 Default is the vector of all column indices.}
@@ -34,9 +33,6 @@ You may use \link{nb_cores}.}
 use \code{ind} for subsetting) read at once. Default uses \link{block_size}.}
 
 \item{...}{Extra arguments to be passed to \code{a.FUN}.}
-}
-\value{
-The result of \link{foreach}.
 }
 \description{
 A Split-Apply-Combine strategy to apply common R functions to a
@@ -68,7 +64,7 @@ str(rowsums <- big_apply(X, a.FUN = function(X, ind) rowSums(X[ind, ]),
 # it is usually preferred to split along columns
 # because matrices are stored by column.
 str(rowsums2 <- big_apply(X, a.FUN = function(X, ind) rowSums(X[, ind]),
-                          a.combine = '+'))
+                          a.combine = 'plus'))
 
 ## Every extra parameter to `a.FUN` should be passed to `big_apply`
 # get the crossproduct between X and a matrix A

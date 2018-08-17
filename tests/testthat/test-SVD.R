@@ -2,6 +2,10 @@
 
 context("SVD")
 
+set.seed(SEED)
+
+################################################################################
+
 TOL <- 1e-4
 
 # function for sampling scaling
@@ -24,8 +28,13 @@ test_that("equality with prcomp", {
     X <- `if`(t == "raw", asFBMcode(x), big_copy(x, type = t))
 
     k <- sample(c(1, 2, 10, 20), 1)
-    sc <- sampleScale()
 
+    test <- big_SVD(X, k = k)
+    pca <- prcomp(X[], center = FALSE, scale. = FALSE)
+    expect_equal(diffPCs(predict(test), pca$x), 0, tolerance = TOL)
+    expect_equal(diffPCs(test$v, pca$rotation), 0, tolerance = TOL)
+
+    sc <- sampleScale()
     test <- big_SVD(X,
                     fun.scaling = big_scale(center = sc$center,
                                             scale = sc$scale),
@@ -38,6 +47,10 @@ test_that("equality with prcomp", {
 
     p <- plot(test, type = sample(c("screeplot", "scores", "loadings"), 1))
     expect_s3_class(p, "ggplot")
+    expect_equal(p + theme_bigstatsr(1.2), MY_THEME(p, 1.2))
+
+    expect_error(predict(test, abc = 2), "Argument 'abc' not used.")
+    expect_error(plot(test, abc = 2), "Argument 'abc' not used.")
   }
 })
 

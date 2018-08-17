@@ -14,10 +14,11 @@ svds4.par <- function(X, fun.scaling, ind.row, ind.col, k,
   Atx  <- FBM(m, 1)
   calc <- FBM(ncores, 1, init = 0)
 
+  cluster_type <- getOption("bigstatsr.cluster.type")
   if (verbose) {
-    cl <- parallel::makeCluster(1 + ncores, outfile = "")
+    cl <- parallel::makeCluster(1 + ncores, type = cluster_type, outfile = "")
   } else {
-    cl <- parallel::makeCluster(1 + ncores)
+    cl <- parallel::makeCluster(1 + ncores, type = cluster_type)
   }
   doParallel::registerDoParallel(cl)
   on.exit(parallel::stopCluster(cl), add = TRUE)
@@ -153,7 +154,7 @@ svds4.seq <- function(X, fun.scaling, ind.row, ind.col, k, tol, verbose) {
 #' in Rokhlin, V., Szlam, A., & Tygert, M. (2010).
 #' A Randomized Algorithm for Principal Component Analysis.
 #' SIAM Journal on Matrix Analysis and Applications, 31(3), 1100–1124.
-#' \url{http://dx.doi.org/10.1137/080736417}.
+#' \url{https://doi.org/10.1137/080736417}.
 #'
 #' @inheritParams bigstatsr-package
 #' @param k Number of singular vectors/values to compute. Default is `10`.
@@ -180,13 +181,15 @@ svds4.seq <- function(X, fun.scaling, ind.row, ind.col, k, tol, verbose) {
 #' @example examples/example-randomSVD.R
 #' @seealso [svds][RSpectra::svds]
 #'
-big_randomSVD <- function(X, fun.scaling,
-                          ind.row = rows_along(X),
-                          ind.col = cols_along(X),
-                          k = 10,
-                          tol = 1e-4,
-                          verbose = FALSE,
-                          ncores = 1) {
+big_randomSVD <- function(
+  X, fun.scaling = big_scale(center = FALSE, scale = FALSE),
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  k = 10,
+  tol = 1e-4,
+  verbose = FALSE,
+  ncores = 1
+) {
 
   check_args()
 

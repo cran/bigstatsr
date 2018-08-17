@@ -8,11 +8,9 @@
 #' @inheritParams bigstatsr-package
 #' @param ... Not used.
 #'
-#' @return A matrix of scores, with rows corresponding to `ind.row`
-#' and columns corresponding to `lambda`.
+#' @return A vector of scores, corresponding to `ind.row`.
 #'
 #' @export
-#' @import Matrix
 #' @importFrom stats predict
 #'
 #' @seealso [big_spLinReg] and [big_spLogReg].
@@ -21,36 +19,33 @@ predict.big_sp <- function(object, X,
                            ind.row = rows_along(X),
                            ind.col = object$ind.col,
                            covar.row = NULL,
-                           block.size = block_size(nrow(X)),
                            ...) {
 
+  assert_nodots()
   check_args()
 
-  betas <- object$beta
+  beta <- object$beta
 
   if (is.null(covar.row)) {
 
-    ind.nozero <- which(rowSums(betas != 0) > 0)
-    scores <- big_prodMat(X, betas[ind.nozero, , drop = FALSE],
+    ind.nozero <- which(beta != 0)
+    scores <- big_prodVec(X, beta[ind.nozero],
                           ind.row = ind.row,
-                          ind.col = ind.col[ind.nozero],
-                          block.size = block.size)
-
+                          ind.col = ind.col[ind.nozero])
   } else {
 
     assert_lengths(ind.row, rows_along(covar.row))
 
     ind.X <- seq_along(ind.col)
-    ind.nozero <- which(rowSums(betas != 0)[ind.X] > 0)
-    scores <- big_prodMat(X, betas[ind.X[ind.nozero], ],
+    ind.nozero <- which(beta[ind.X] != 0)
+    scores <- big_prodVec(X, beta[ind.nozero],
                           ind.row = ind.row,
-                          ind.col = ind.col[ind.nozero],
-                          block.size = block.size) +
-      covar.row %*% betas[-ind.X, , drop = FALSE]
+                          ind.col = ind.col[ind.nozero]) +
+      drop(covar.row %*% beta[-ind.X])
   }
 
-  rownames(scores) <- ind.row
-  as.matrix(sweep(scores, 2, object$intercept, "+"))
+  names(scores) <- ind.row
+  scores + object$intercept
 }
 
 ################################################################################
@@ -78,9 +73,11 @@ predict.big_sp_best_list <- function(object, X,
                                      proba = (attr(object, "family") == "binomial"),
                                      ...) {
 
+  assert_nodots()
   check_args()
 
-  sapply(object, function(obj) {
+  K_scores <- sapply(object, function(obj) {
+
     beta.X <- obj$beta.X
     ind.nozero <- which(beta.X != 0)
 
@@ -92,9 +89,12 @@ predict.big_sp_best_list <- function(object, X,
     if (!is.null(covar.row))
       scores <- scores + drop(covar.row %*% obj$beta.covar)
 
-    names(scores) <- ind.row
-    `if`(proba, 1 / (1 + exp(-scores)), scores)
+    scores
   })
+
+  one_score <- rowMeans(K_scores)
+  names(one_score) <- ind.row
+  `if`(proba, 1 / (1 + exp(-one_score)), one_score)
 }
 
 ################################################################################
@@ -114,15 +114,14 @@ predict.big_sp_best_list <- function(object, X,
 #'
 #' @export
 #' @importFrom stats predict
-#' @importFrom magrittr %>%
 #'
 #' @seealso [big_univLinReg] and [big_univLogReg].
 #'
 predict.mhtest <- function(object, scores = object$score, log10 = TRUE, ...) {
 
-  lpval <- scores %>%
-    attr(object, "transfo")() %>%
-    attr(object, "predict")()
+  assert_nodots()
+  scores.trans <- attr(object, "transfo")(scores)
+  lpval <- attr(object, "predict")(scores.trans)
 
   `if`(log10, lpval, 10^lpval)
 }
@@ -138,6 +137,7 @@ predict.mhtest <- function(object, scores = object$score, log10 = TRUE, ...) {
 #' @param ... Not used.
 #'
 #' @export
+#' @importFrom stats predict
 #'
 #' @return A matrix of size \eqn{n \times K} where `n` is the number of samples
 #' corresponding to indices in `ind.row` and K the number of PCs
@@ -154,19 +154,21 @@ predict.big_SVD <- function(object, X = NULL,
                             block.size = block_size(nrow(X)),
                             ...) {
 
+  assert_nodots()
+
   if (is.null(X)) {
-    k <- length(object$d)
-    object$u %*% diag(object$d, k, k)
+    # U * D
+    sweep(object$u, 2, object$d, '*')
   } else {
     check_args()
 
     # Multiplication with clever scaling (see vignettes)
     v2 <- object$v / object$scale
-    tmp <- big_prodMat(X, v2,
+    Xv2 <- big_prodMat(X, v2,
                        ind.row = ind.row,
                        ind.col = ind.col,
                        block.size = block.size)
-    sweep(tmp, 2, crossprod(object$center, v2), "-")
+    sweep(Xv2, 2, crossprod(object$center, v2), '-')
   }
 }
 

@@ -10,9 +10,9 @@
 #'
 #' @examples
 #' # tmpFBM
-#' X <- FBM(10, 10, save = TRUE)
+#' X <- FBM(10, 10)$save()
 #'
-#' rdsfile <- sub("\\.bk$", ".rds", X$backingfile)
+#' rdsfile <- sub_bk(X$backingfile, ".rds")
 #' X2 <- big_attach(rdsfile)
 #'
 #' all.equal(X[], X2[])
@@ -32,7 +32,12 @@ big_attach <- function(rdsfile) {
 #' @export
 #' @keywords internal
 big_attachExtdata <- function() {
-  big_attach(system.file("extdata", "example.rds", package = "bigstatsr"))
+  tmp <- tempfile()
+  EXTS <- c(".rds", ".bk")
+  file.copy(system.file("extdata", paste0("example", EXTS),
+                        package = "bigstatsr"),
+            paste0(tmp, EXTS))
+  big_attach(paste0(tmp, ".rds"))
 }
 
 ################################################################################

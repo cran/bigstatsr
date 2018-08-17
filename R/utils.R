@@ -8,13 +8,6 @@ globalVariables("ic") # for foreach
 
 ################################################################################
 
-printf <- function(...) cat(sprintf(...))
-message2 <- function(...) message(sprintf(...))
-warning2 <- function(...) warning(sprintf(...), call. = FALSE)
-stop2 <- function(...) stop(sprintf(...), call. = FALSE)
-
-################################################################################
-
 #' Determine a correct value for the block.size parameter
 #'
 #' It determines the value of `block.size` such that a matrix of doubles of
@@ -43,7 +36,12 @@ block_size <- function(n, ncores = 1) {
 
 CutBySize <- function(m, block.size, nb = ceiling(m / block.size)) {
 
-  if (nb > m) nb <- m
+  if (nb > m) {
+    nb <- m
+  } else if (nb == 0) {  ## block.size = Inf
+    nb <- 1
+  }
+  assert_pos(nb)
   int <- m / nb
 
   upper <- round(1:nb * int)

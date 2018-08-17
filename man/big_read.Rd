@@ -4,55 +4,50 @@
 \alias{big_read}
 \title{Read a file}
 \usage{
-big_read(file, file.nheader = 0, file.nline = NULL, info.nelem = 0,
-  split = " ", read.what = double(), read.transfo = identity,
-  BM.type = typeof(read.what), transpose = FALSE, ...)
+big_read(file, select, filter = NULL, type = c("double", "integer",
+  "unsigned short", "unsigned char", "raw"),
+  backingfile = drop_ext(file), ...)
 }
 \arguments{
-\item{file}{The path to the file to be read.}
+\item{file}{File to read.}
 
-\item{file.nheader}{Number of lines to read at the beginning of the file,
-as a separate header information. Default is \code{0}. Each line is read as one
-string. You may need to post-process it with \link{strsplit}. See examples.}
+\item{select}{Indices of columns to read (sorted).
+The length of \code{select} will be the number of columns of the resulting FBM.}
 
-\item{file.nline}{Number of total lines of the file. Default is \code{NULL} and a
-function computes it. This function doesn't work for compressed files so that
-you will have to explicitly specify the number of lines of the file.}
+\item{filter}{Vector used to subset the rows of each data frame.}
 
-\item{info.nelem}{Number of elements of extra information to read at the
-beginning of each line. Default is \code{0}.}
+\item{type}{Type of the Filebacked Big Matrix (default is \code{double}). Either
+\itemize{
+\item \code{"double"}
+\item \code{"integer"}
+\item \code{"unsigned short"}: can store integer values from 0 to 65535.
+It has vocation to become the basis for a \code{FBM.code65536} class for
+accessing strings.
+\item \code{"raw"} or \code{"unsigned char"}: can store integer values from 0 to 255.
+It is the basis for the \link[=FBM.code256-class]{FBM.code256} class for
+accessing 256 arbitrary different numeric values.
+It is used in \href{https://goo.gl/pHCCmo}{package bigsnpr}.
+}}
 
-\item{split}{The separator used in the file. Default is a space.}
+\item{backingfile}{Path to the file storing the Big Matrix on disk.
+An extension ".bk" will be automatically added.
+Default uses \code{file} without its extension.}
 
-\item{read.what}{What type of elements to scan? Default is \code{double()}.
-You can also use \code{character()} or \code{integer()}.}
-
-\item{read.transfo}{Function that transforms each line you read.}
-
-\item{BM.type}{Type of the resulting Filebacked Big Matrix. Default uses the
-type of \code{read.what}. This can be useful if you have only small integers or
-that the \code{read.transfo} function transforms the type of what is read.}
-
-\item{transpose}{Should the resulting Filebacked Big Matrix be transposed?
-Default is \code{FALSE}.}
-
-\item{...}{Arguments passed on to \code{FBM}
+\item{...}{Arguments passed on to \code{bigreadr::big_fread2}
 \describe{
-  \item{backingfile}{Path to the file storing the Big Matrix on disk.
-An extension ".bk" will be automatically added. Default stores in the
-temporary directory.}
-  \item{create_bk}{Create a backingfile (the default) or use an existing one
-(which should be named by the \code{backingfile} parameter and have an
-extension ".bk"). For example, this could be used to convert a filebacked
-\code{big.matrix} from package \strong{bigmemory} to a \link[=FBM-class]{FBM}.}
-  \item{save}{Whether to save the result object in an ".rds" file alongside
-the backingfile. Default is \code{FALSE}.}
+  \item{nb_parts}{Number of parts in which to split reading (and transforming).
+Parts are referring to blocks of selected columns.
+Default uses \code{part_size} to set a good value.}
+  \item{skip}{Number of lines to skip at the beginning of \code{file}.}
+  \item{progress}{Show progress? Default is \code{FALSE}.}
+  \item{part_size}{Size of the parts if \code{nb_parts} is not supplied.
+Default is \code{500 * 1024^2} (500 MB).}
 }}
 }
 \value{
-A Filebacked Big Matrix with two attributes \code{header} and \code{info}.
+A Filebacked Big Matrix of type '<type>' with <length(select)> columns.
 }
 \description{
-Read a file as a Filebacked Big Matrix.
+Read a file as a Filebacked Big Matrix by using package {bigreadr}.
 For a mini-tutorial, please see \href{https://goo.gl/91oNxU}{this vignette}.
 }

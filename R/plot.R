@@ -1,15 +1,34 @@
 ################################################################################
 
+#' Theme ggplot2
+#'
+#' Theme ggplot2 used by this package.
+#'
+#' @param size.rel Relative size. Default is `1`.
+#'
+#' @import ggplot2
+#'
+#' @export
+#'
+#' @examples
+#' library(ggplot2)
+#' qplot(y = 1:10)
+#' qplot(y = 1:10) + theme_bw()
+#' qplot(y = 1:10) + theme_bigstatsr()
+theme_bigstatsr <- function(size.rel = 1) {
+  theme_bw() +
+    theme(plot.title    = element_text(size = rel(2.0 * size.rel), hjust = 0.5),
+          plot.subtitle = element_text(size = rel(1.5 * size.rel), hjust = 0.5),
+          legend.title  = element_text(size = rel(1.8 * size.rel)),
+          legend.text   = element_text(size = rel(1.3 * size.rel)),
+          axis.title    = element_text(size = rel(1.5 * size.rel)),
+          axis.text     = element_text(size = rel(1.2 * size.rel)),
+          legend.key.height = unit(1.3 * size.rel, "line"),
+          legend.key.width  = unit(1.3 * size.rel, "line"))
+}
+
 MY_THEME <- function(p, coeff = 1) {
-  p + theme_bw() +
-    theme(plot.title    = element_text(size = rel(2.0 * coeff), hjust = 0.5),
-          plot.subtitle = element_text(size = rel(1.5 * coeff), hjust = 0.5),
-          legend.title  = element_text(size = rel(1.8 * coeff)),
-          legend.text   = element_text(size = rel(1.3 * coeff)),
-          axis.title    = element_text(size = rel(1.5 * coeff)),
-          axis.text     = element_text(size = rel(1.2 * coeff)),
-          legend.key.height = unit(1.3 * coeff, "line"),
-          legend.key.width = unit(1.3 * coeff, "line"))
+  p + theme_bigstatsr(size.rel = coeff)
 }
 
 ################################################################################
@@ -31,8 +50,7 @@ MY_THEME <- function(p, coeff = 1) {
 #' @param cols If multiple vector of loadings are to be plotted, this defines
 #' the number of columns of the resulting multiplot.
 #' @param coeff Relative size of text. Default is `1`.
-#' @param viridis Whether to use colors of package viridis when plotting
-#' multiple loadings. Default is `TRUE` if the package is installed.
+#' @param viridis Deprecated argument.
 #' @param ... Not used.
 #'
 #' @return A `ggplot2` object. You can plot it using the `print` method.
@@ -54,8 +72,13 @@ plot.big_SVD <- function(x, type = c("screeplot", "scores", "loadings"),
                          loadings = 1,
                          cols = 2,
                          coeff = 1,
-                         viridis = requireNamespace("viridis", quietly = TRUE),
+                         viridis = TRUE,
                          ...) {
+
+  assert_nodots()
+
+  if (!missing(viridis))
+    warning2("Argument 'viridis' is deprecated and will be removed.")
 
   assert_lengths(nval, 1)
   assert_lengths(scores, 1:2)
@@ -86,11 +109,7 @@ plot.big_SVD <- function(x, type = c("screeplot", "scores", "loadings"),
       all.p <- lapply(loadings, function(i) {
         p <- plot(x, type = "loadings", loading = i, coeff = coeff)
         p$layers[[1]] <- NULL
-        if (viridis) {
-          p + geom_hex() + viridis::scale_fill_viridis()
-        } else {
-          p + geom_hex()
-        }
+        p + geom_hex() + scale_fill_viridis_c()
       })
 
       cowplot::plot_grid(plotlist = all.p, align = "hv", ncol = cols)
@@ -116,13 +135,12 @@ plot.big_SVD <- function(x, type = c("screeplot", "scores", "loadings"),
 #' Plot method for class `mhtest`.
 #'
 #' @param x An object of class `mhtest`.
-#' @param type Either
-#' - "Manhattan": plot of the negative logarithm (in base 10) of p-values
-#'   (the default).
+#' @param type Either.
+#' - "hist": histogram of p-values (the default).
+#' - "Manhattan": plot of the negative logarithm (in base 10) of p-values.
 #' - "Q-Q": Q-Q plot.
 #' - "Volcaco": plot of the negative logarithm of p-values against the
-#'   estimation of coefficients (e.g. betas in linear regression).
-#' @param main The title of the plot. Default use the `type`.
+#'   estimation of coefficients (e.g. betas in linear regression)
 #' @param coeff Relative size of text. Default is `1`.
 #' @param ... Not used.
 #'
@@ -142,35 +160,47 @@ plot.big_SVD <- function(x, type = c("screeplot", "scores", "loadings"),
 #' plot(test)
 #' plot(test, type = "Volcano")
 #' plot(test, type = "Q-Q")
+#' plot(test, type = "Manhattan")
+#' plot(test, type = "Manhattan") + ggplot2::ggtitle(NULL)
 #'
 #' @seealso [big_univLinReg], [big_univLogReg],
 #' [plot.big_SVD] and [asPlotlyText].
-plot.mhtest <- function(x, type = c("Manhattan", "Q-Q", "Volcano"),
-                        main = paste(type, "Plot"),
+plot.mhtest <- function(x, type = c("hist", "Manhattan", "Q-Q", "Volcano"),
                         coeff = 1,
                         ...) {
+
+  assert_nodots()
 
   lpval <- predict(x) # log10(p)
 
   type <- match.arg(type)
+  main <- paste(type, "plot")
 
   if (type == "Manhattan") {
-    MY_THEME(qplot(y = -lpval), coeff = coeff) +
+    qplot(y = -lpval) +
       labs(title = main, x = "Column Index",
            y = expression(-log[10](italic("p-value"))))
   } else if (type == "Volcano") {
-    MY_THEME(qplot(x = x[["estim"]], y = -lpval), coeff = coeff) +
+    qplot(x = x[["estim"]], y = -lpval) +
       labs(title = main, x = "Estimate",
            y = expression(-log[10](italic("p-value"))))
   } else if (type == "Q-Q") {
     unif.ranked <- stats::ppoints(length(lpval))[rank(lpval)]
-    MY_THEME(qplot(x = -log10(unif.ranked), y = -lpval),
-             coeff = coeff) +
+    qplot(x = -log10(unif.ranked), y = -lpval) +
       labs(title = main,
            x = expression(Expected~~-log[10](italic("p-value"))),
            y = expression(Observed~~-log[10](italic("p-value")))) +
       geom_abline(slope = 1, intercept = 0, color = "red")
+  } else if (type == "hist") {
+    pval <- 10^lpval
+    h <- graphics::hist(pval, breaks = "FD", plot = FALSE)
+    ggplot() +
+      geom_histogram(aes(pval), breaks = h$breaks,
+                     color = "#FFFFFF", fill = "#000000", alpha = 0.5) +
+      labs(x = "p-value")
   }
+
+  last_plot() + theme_bigstatsr(size.rel = coeff)
 }
 
 ################################################################################

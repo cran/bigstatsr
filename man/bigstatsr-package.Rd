@@ -33,7 +33,8 @@ You may use \link{nb_cores}.}
 
 \item{fun.scaling}{A function that returns a named list of
 \code{mean} and \code{sd} for every column, to scale each of their elements
-such as followed: \deqn{\frac{X_{i,j} - mean_j}{sd_j}.}}
+such as followed: \deqn{\frac{X_{i,j} - mean_j}{sd_j}.}
+Default doesn't use any scaling.}
 
 \item{covar.train}{Matrix of covariables to be added in each model to correct
 for confounders (e.g. the scores of PCA), corresponding to \code{ind.train}.
@@ -45,10 +46,10 @@ Default is \code{NULL} and corresponds to only adding an intercept to each model
 }
 \description{
 Easy-to-use, efficient, flexible and scalable statistical tools.
-Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping.
-It provides for instance matrix operations, Principal Component Analysis,
-sparse linear supervised models, utility functions and more.
-Preprint: Privé et al. (2017) <doi:10.1101/190926>.
+  Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping.
+  It provides for instance matrix operations, Principal Component Analysis,
+  sparse linear supervised models, utility functions and more
+  <doi:10.1093/bioinformatics/bty185>.
 }
 \section{Matrix parallelization}{
 

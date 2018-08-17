@@ -5,25 +5,25 @@
 #' This is base on the following rule: use only physical cores and if you have
 #' only physical cores, leave one core for the OS/UI.
 #'
-#' @inheritParams parallel::detectCores
-#'
 #' @return The recommended number of cores to use.
 #' @export
 #'
-#' @seealso [parallel::detectCores]
-#'
 #' @examples
-#' # Number of cores in total
-#' parallel::detectCores()
-#' # Number of physical cores
-#' parallel::detectCores(logical = FALSE)
-#' # Recommended number of cores to use
 #' nb_cores()
-nb_cores <- function(all.tests = FALSE) {
-  all_cores <- parallel::detectCores(all.tests = all.tests)
-  all_physical_cores <- parallel::detectCores(all.tests = all.tests,
-                                              logical = FALSE)
-  `if`(all_physical_cores < all_cores, all_physical_cores, all_cores - 1)
+nb_cores <- function() {
+
+  if (Sys.info()[["sysname"]] == "Windows") {
+    ncores <- parallel::detectCores(logical = FALSE)
+  } else {
+    # https://stackoverflow.com/a/23378780/6103040
+    cmd <- "[ $(uname) = 'Darwin' ] && sysctl -n hw.physicalcpu_max ||
+            lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l"
+    ncores <- as.integer(system(cmd, intern = TRUE))
+  }
+
+  all_cores <- parallel::detectCores(logical = TRUE)
+
+  `if`(ncores < all_cores, ncores, all_cores - 1L)
 }
 
 ################################################################################
@@ -41,63 +41,58 @@ nb_cores <- function(all.tests = FALSE) {
 #'   `ind`, a vector of indices, which are used to split the data.
 #'   For example, if you want to apply a function to \code{X[ind.row, ind.col]},
 #'   you may use \code{X[ind.row, ind.col[ind]]} in `a.FUN`.
-#' @param p.combine function that is used by [foreach] to process the tasks
-#'   results as they generated. This can be specified as either a function or a
-#'   non-empty character string naming the function. Specifying 'c' is useful
-#'   for concatenating the results into a vector, for example.
-#'   The values 'cbind' and 'rbind' can combine vectors into a matrix.
-#'   The values '+' and '*' can be used to process numeric data.
-#'   By default, the results are returned in a list.
+#' @param p.combine Function to combine the results with `do.call`.
+#'   This function should accept multiple arguments (`...`). For example, you
+#'   can use `c`, `cbind`, `rbind`. This package also provides function `plus`
+#'   to add multiple arguments together. The default is `NULL`, in which case
+#'   the results are not combined and are returned as a list, each element being
+#'   the result of a block.
 #' @param ind Initial vector of subsetting indices.
 #'   Default is the vector of all column indices.
 #' @param ... Extra arguments to be passed to `p.FUN`.
 #'
-#' @return The result of [foreach].
+#' @return Return a list of `ncores` elements, each element being the result of
+#'   one of the cores, computed on a block. The elements of this list are then
+#'   combined with `do.call(p.combine, .)` if `p.combined` is given.
 #' @export
 #'
 #' @example examples/example-parallelize.R
 #' @seealso [big_apply]
-big_parallelize <- function(X, p.FUN, p.combine,
+big_parallelize <- function(X, p.FUN,
+                            p.combine = NULL,
                             ind = cols_along(X),
                             ncores = nb_cores(),
                             ...) {
 
-  check_args()
   assert_args(p.FUN, "ind")
   assert_int(ind); assert_pos(ind)
+  assert_cores(ncores)
 
-  if (ncores > 1) { # parallel
-
-    range.parts <- CutBySize(length(ind), nb = ncores)
-
-    cl <- parallel::makeCluster(ncores)
+  if (ncores == 1) {
+    registerDoSEQ()
+  } else {
+    cluster_type <- getOption("bigstatsr.cluster.type")
+    cl <- parallel::makeCluster(ncores, type = cluster_type)
     doParallel::registerDoParallel(cl)
     on.exit(parallel::stopCluster(cl), add = TRUE)
-
-    # Microsoft R Open?
-    multi <- eval(parse(text = "requireNamespace('RevoUtilsMath', quietly = TRUE)"))
-
-    foreach(ic = 1:ncores, .combine = p.combine) %dopar% {
-      # https://www.r-bloggers.com/too-much-parallelism-is-as-bad/
-      if (multi) {
-        eval(parse(text = "nthreads.save <- RevoUtilsMath::setMKLthreads(1);
-                   on.exit(RevoUtilsMath::setMKLthreads(nthreads.save), add = TRUE)"))
-      }
-
-      p.FUN(X, ind = ind[seq2(range.parts[ic, ])], ...)
-    }
-  } else { # sequential
-    p.FUN(X, ind = ind, ...)
   }
+
+  intervals <- CutBySize(length(ind), nb = ncores)
+
+  res <- foreach(ic = rows_along(intervals)) %dopar% {
+    p.FUN(X, ind = ind[seq2(intervals[ic, ])], ...)
+  }
+
+  `if`(is.null(p.combine), res, do.call(p.combine, res))
 }
 
 ################################################################################
 
-big_applySeq <- function(X, a.FUN, a.combine, block.size, ind, ...) {
+big_applySeq <- function(X, a.FUN, block.size, ind, ...) {
 
   intervals <- CutBySize(length(ind), block.size)
 
-  foreach(ic = rows_along(intervals), .combine = a.combine) %do% {
+  foreach(ic = rows_along(intervals)) %do% {
     a.FUN(X, ind = ind[seq2(intervals[ic, ])], ...)
   }
 }
@@ -121,43 +116,60 @@ big_applySeq <- function(X, a.FUN, a.combine, block.size, ind, ...) {
 #'   `ind`, a vector of indices, which are used to split the data.
 #'   For example, if you want to apply a function to \code{X[ind.row, ind.col]},
 #'   you may use \code{X[ind.row, ind.col[ind]]} in `a.FUN`.
-#' @param a.combine function that is used by [foreach] to process the tasks
-#'   results as they generated. This can be specified as either a function or a
-#'   non-empty character string naming the function. Specifying 'c' is useful
-#'   for concatenating the results into a vector, for example.
-#'   The values 'cbind' and 'rbind' can combine vectors into a matrix.
-#'   The values '+' and '*' can be used to process numeric data.
-#'   By default, the results are returned in a list.
+#' @param a.combine Function to combine the results with `do.call`.
+#'   This function should accept multiple arguments (`...`). For example, you
+#'   can use `c`, `cbind`, `rbind`. This package also provides function `plus`
+#'   to add multiple arguments together. The default is `NULL`, in which case
+#'   the results are not combined and are returned as a list, each element being
+#'   the result of a block.
 #' @param ind Initial vector of subsetting indices.
 #'   Default is the vector of all column indices.
 #' @param block.size Maximum number of columns (or rows, depending on how you
 #'   use `ind` for subsetting) read at once. Default uses [block_size].
 #' @param ... Extra arguments to be passed to `a.FUN`.
 #'
-#' @return The result of [foreach].
 #' @export
 #'
 #' @example examples/example-apply.R
 #' @seealso [big_parallelize]
-big_apply <- function(X, a.FUN, a.combine,
+big_apply <- function(X, a.FUN,
+                      a.combine = NULL,
                       ind = cols_along(X),
                       ncores = 1,
                       block.size = block_size(nrow(X), ncores),
                       ...) {
 
-  check_args()
   assert_args(a.FUN, "ind")
-  assert_int(ind); assert_pos(ind)
 
-  big_parallelize(X = X,
-                  p.FUN = big_applySeq,
-                  p.combine = a.combine,
-                  ind = ind,
-                  ncores = ncores,
-                  a.FUN = a.FUN,
-                  a.combine = a.combine,
-                  block.size = block.size,
-                  ...)
+  res <- big_parallelize(X = X,
+                         p.FUN = big_applySeq,
+                         p.combine = NULL,
+                         ind = ind,
+                         ncores = ncores,
+                         a.FUN = a.FUN,
+                         block.size = block.size,
+                         ...)
+
+  res <- unlist(res, recursive = FALSE)
+
+  `if`(is.null(a.combine), res, do.call(a.combine, res))
+}
+
+################################################################################
+
+#' Add
+#'
+#' Add multiple arguments
+#'
+#' @param ... Multiple arguments to be added together
+#'
+#' @return ` Reduce('+', list(...))`
+#' @export
+#'
+#' @examples
+#' plus(1:3, 4:6, 1:3)
+plus <- function(...) {
+  Reduce('+', list(...))
 }
 
 ################################################################################

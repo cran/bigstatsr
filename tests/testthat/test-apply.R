@@ -2,6 +2,10 @@
 
 context("APPLY")
 
+set.seed(SEED)
+
+################################################################################
+
 # Simulating some data
 N <- 73
 M <- 4300
@@ -24,8 +28,8 @@ test_that("equality with other functions", {
     expect_equal(colnorms, sqrt(colSums(X[]^2)))
 
     # get the sums of each row
-    rowsums <- big_apply(X, function(x, ind) rowSums(x[, ind]), a.combine = "+",
-                         ncores = test_cores())
+    rowsums <- big_apply(X, function(x, ind) rowSums(x[, ind]),
+                         a.combine = "plus", ncores = test_cores())
     expect_equal(rowsums, rowSums(X[]))
 
     # get the maximum element of X (in absolute value)
@@ -42,6 +46,12 @@ test_that("equality with other functions", {
     B <- matrix(0, M, 10)
     B[] <- rnorm(length(B))
     expect_equal(big_prodMat(X, B, ncores = test_cores()), X[] %*% B)
+
+    # no combine
+    size <- sample(c(1, sample(M, size = 1), M), 1)
+    no_comb <- big_apply(X, function(x, ind) colMeans(x[, ind, drop = FALSE]),
+                         ncores = test_cores(), block.size = size)
+    expect_equal(do.call(c, no_comb), colmeans)
   }
 })
 

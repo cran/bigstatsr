@@ -2,11 +2,17 @@
 
 context("UNIV_LIN_REG")
 
+set.seed(SEED)
+
+################################################################################
+
 # Simulating some data
 N <- 73
 M <- 43
 x <- matrix(rnorm(N * M, mean = 100, sd = 5), N)
 y <- rnorm(N)
+y2 <- (y > 0)
+y3 <- y; y3[] <- 0
 
 covar0 <- matrix(rnorm(N * 3), N)
 lcovar <- list(NULL, covar0)
@@ -29,12 +35,21 @@ test_that("equality with lm with all data", {
     X <- `if`(t == "raw", asFBMcode(x), big_copy(x, type = t))
 
     for (covar in lcovar) {
+
+      expect_error(big_univLinReg(X, y3, covar.train = covar, ncores = test_cores()),
+                     "'y.train' should be composed of different values.", fixed = TRUE)
+      expect_warning(big_univLinReg(X, y2, covar.train = covar, ncores = test_cores()),
+                     "'y.train' is composed of only two different levels.", fixed = TRUE)
+
       mod <- big_univLinReg(X, y, covar.train = covar, ncores = test_cores())
       mod$p.value <- predict(mod, log10 = FALSE)
       expect_equivalent(as.matrix(mod), getLM(X, y, covar))
 
       p <- plot(mod, type = sample(c("Manhattan", "Q-Q", "Volcano"), 1))
       expect_s3_class(p, "ggplot")
+
+      expect_error(predict(mod, abc = 2), "Argument 'abc' not used.")
+      expect_error(plot(mod, abc = 2), "Argument 'abc' not used.")
     }
   }
 })

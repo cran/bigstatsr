@@ -9,8 +9,8 @@ COPY_cdfit_gaussian_hsr <- function(BM, y, row_idx, col_idx, covar, lambda, cent
     .Call(`_bigstatsr_COPY_cdfit_gaussian_hsr`, BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min)
 }
 
-COPY_cdfit_binomial_hsr <- function(BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min) {
-    .Call(`_bigstatsr_COPY_cdfit_binomial_hsr`, BM, y, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, n_abort, nlam_min)
+COPY_cdfit_binomial_hsr <- function(BM, y, base, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, b0, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, base_val, n_abort, nlam_min) {
+    .Call(`_bigstatsr_COPY_cdfit_binomial_hsr`, BM, y, base, row_idx, col_idx, covar, lambda, center, scale, resid, alpha, b0, eps, max_iter, dfmax, warn, row_idx_val, covar_val, y_val, base_val, n_abort, nlam_min)
 }
 
 bigsummaries <- function(BM, row_idx, col_idx, covar, y, which_set, K) {
@@ -27,10 +27,6 @@ mycount1 <- function(BM, rowInd, colInd, codeInd) {
 
 mycount2 <- function(BM, rowInd, colInd, codeInd) {
     .Call(`_bigstatsr_mycount2`, BM, rowInd, colInd, codeInd)
-}
-
-createFile <- function(fileName, nrow, ncol, type) {
-    invisible(.Call(`_bigstatsr_createFile`, fileName, nrow, ncol, type))
 }
 
 decodeMat <- function(source, code) {
@@ -53,10 +49,6 @@ GET_ERROR_BOUNDS <- function() {
     .Call(`_bigstatsr_GET_ERROR_BOUNDS`)
 }
 
-GET_ERROR_USHORT <- function() {
-    .Call(`_bigstatsr_GET_ERROR_USHORT`)
-}
-
 extractVec <- function(xpbm, elemInd) {
     .Call(`_bigstatsr_extractVec`, xpbm, elemInd)
 }
@@ -65,16 +57,12 @@ extractMat <- function(xpbm, rowInd, colInd) {
     .Call(`_bigstatsr_extractMat`, xpbm, rowInd, colInd)
 }
 
-getXPtrFBM <- function(path, n, m, type) {
-    .Call(`_bigstatsr_getXPtrFBM`, path, n, m, type)
+createFile <- function(fileName, nrow, ncol, type) {
+    invisible(.Call(`_bigstatsr_createFile`, fileName, nrow, ncol, type))
 }
 
-pMatVec4 <- function(BM, x, rowInd, colInd) {
-    .Call(`_bigstatsr_pMatVec4`, BM, x, rowInd, colInd)
-}
-
-cpMatVec4 <- function(BM, x, rowInd, colInd) {
-    .Call(`_bigstatsr_cpMatVec4`, BM, x, rowInd, colInd)
+addColumns <- function(fileName, nrow, ncol_add, type) {
+    invisible(.Call(`_bigstatsr_addColumns`, fileName, nrow, ncol_add, type))
 }
 
 replaceVecOne <- function(xpbm, elemInd, val) {
@@ -91,6 +79,22 @@ replaceMatOne <- function(xpbm, rowInd, colInd, val) {
 
 replaceMat <- function(xpbm, rowInd, colInd, mat) {
     invisible(.Call(`_bigstatsr_replaceMat`, xpbm, rowInd, colInd, mat))
+}
+
+replaceDF <- function(xpbm, rowInd, colInd, df) {
+    invisible(.Call(`_bigstatsr_replaceDF`, xpbm, rowInd, colInd, df))
+}
+
+getXPtrFBM <- function(path, n, m, type) {
+    .Call(`_bigstatsr_getXPtrFBM`, path, n, m, type)
+}
+
+pMatVec4 <- function(BM, x, rowInd, colInd) {
+    .Call(`_bigstatsr_pMatVec4`, BM, x, rowInd, colInd)
+}
+
+cpMatVec4 <- function(BM, x, rowInd, colInd) {
+    .Call(`_bigstatsr_cpMatVec4`, BM, x, rowInd, colInd)
 }
 
 transpose3 <- function(BM, BM2) {

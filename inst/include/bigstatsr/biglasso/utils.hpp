@@ -15,14 +15,14 @@ namespace bigstatsr { namespace biglassoUtils {
 // summaries
 template <class C>
 NumericVector get_summaries(C macc,
-                            const IntegerVector& y,
+                            const NumericVector& y,
                             const IntegerVector& which_set,
                             int K) {
 
   int n = macc.nrow();
   int m = macc.ncol();
 
-  arma::cube cubeArray(K, m, 4, arma::fill::zeros);
+  arma::cube cubeArray(K, m, 3, arma::fill::zeros);
 
   for (int j = 0; j < m; j++) {
     for (int i = 0; i < n; i++) {
@@ -31,7 +31,6 @@ NumericVector get_summaries(C macc,
       cubeArray(k, j, 0) += x;
       cubeArray(k, j, 1) += x * x;
       cubeArray(k, j, 2) += x * y[i];
-      cubeArray(k, j, 3) += y[i];
     }
   }
 
@@ -82,12 +81,15 @@ size_t COPY_check_strong_set(LogicalVector& in_A,
                              const LogicalVector& in_S,
                              NumericVector& z,
                              C macc,
-                             const NumericVector& beta_old,
                              const NumericVector& center,
                              const NumericVector& scale,
-                             double lambda, double sumResid, double alpha,
+                             const NumericVector& beta_old,
+                             double lambda,
+                             double sumResid,
+                             double alpha,
                              const NumericVector& r,
                              size_t n, size_t p) {
+
   double sum, l1, l2;
   size_t i, j, violations = 0;
 

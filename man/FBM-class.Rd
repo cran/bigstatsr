@@ -5,11 +5,15 @@
 \alias{FBM-class}
 \alias{FBM_RC}
 \alias{FBM}
+\alias{as_FBM}
 \title{Class FBM}
 \usage{
 FBM(nrow, ncol, type = c("double", "integer", "unsigned short",
   "unsigned char", "raw"), init = NULL, backingfile = tempfile(),
-  create_bk = TRUE, save = FALSE)
+  create_bk = TRUE)
+
+as_FBM(x, type = c("double", "integer", "unsigned short",
+  "unsigned char", "raw"), backingfile = tempfile())
 }
 \arguments{
 \item{nrow}{Number of rows.}
@@ -41,15 +45,36 @@ temporary directory.}
 extension ".bk"). For example, this could be used to convert a filebacked
 \code{big.matrix} from package \strong{bigmemory} to a \link[=FBM-class]{FBM}.}
 
-\item{save}{Whether to save the result object in an ".rds" file alongside
-the backingfile. Default is \code{FALSE}.}
+\item{x}{A matrix or an data frame (2-dimensional data).}
 }
 \description{
 A reference class for storing and accessing matrix-like data stored in files
 on disk. This is very similar to Filebacked Big Matrices provided by the
-\strong{bigmemory} package. Yet, the implementation is much more lighter.
+\strong{bigmemory} package. Yet, the implementation is lighter.
 
-Wrapper constructor for class \code{FBM}.
+Convert a matrix (or a data frame) to an FBM.
+}
+\details{
+An FBM object has many field:
+\itemize{
+\item \code{$address}: address of the external pointer containing the underlying
+C++ object, to be used as a \code{XPtr<FBM>} in C++ code
+\item \code{$extptr}: use \code{$address} instead
+\item \code{$nrow}
+\item \code{$ncol}
+\item \code{$type}
+\item \code{$backingfile} or \code{$bk}: File with extension 'bk' that stores the numeric
+data of the FBM
+\item \code{$rds}: 'rds' file (that may not exist) corresponding to the 'bk' file
+\item \code{$is_saved}: whether this object stored in \code{$rds}?
+}
+
+And two methods:
+\itemize{
+\item \code{$save()}: Save the FBM object in \code{$rds}. Returns the FBM.
+\item \code{add_columns(<ncol_add>)}: Add some columns to the FBM by appending the
+backingfile with some data. Returns the FBM invisibly.
+}
 }
 
 \examples{
@@ -65,4 +90,11 @@ X[, c(TRUE, FALSE)]
 X[cbind(1:10, 1:10)] <- NA_real_
 X[]
 
+X <- FBM(150, 5)
+X[] <- iris   ## you can replace with a df (factors -> integers)
+X2 <- as_FBM(iris)
+identical(X[], X2[])
+}
+\seealso{
+\link{big_copy}
 }

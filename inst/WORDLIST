@@ -10,13 +10,16 @@ backingfile
 Bien
 biglasso
 bigmemory
+bigreadr
 bigsnpr
 biobank
+bioinformatics
 bioRxiv
 blanczos
 bmatrix
 boldsymbol
 Breheny
+bty
 cbind
 cdot
 CMSA
@@ -35,8 +38,11 @@ Filebacked
 FlashPCA
 foreach
 frac
+fread
+fwrite
 ggplot
 GigaBytes
+Gohel
 Hanley
 Hastie
 https
@@ -52,6 +58,7 @@ Mei
 multiplot
 nb
 newcommand
+nrow
 parApply
 parallelization
 parallelize

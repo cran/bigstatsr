@@ -1,27 +1,45 @@
 ################################################################################
 
-summaries <- function(X, y.train, ind.train, ind.col,
+summaries <- function(X, y.train, y_null.train, ind.train, ind.col,
                       covar.train = matrix(0, length(ind.train), 0),
                       ind.sets, K) {
 
   assert_lengths(ind.train, ind.sets)
+  assert_lengths(y_null.train, 1:K)
 
   tmp <- bigsummaries(X, ind.train, ind.col, covar.train, y.train, ind.sets, K)
 
   all <- colSums(tmp)
-  n.sets <- length(ind.train) - table(ind.sets)
-  SUM_X  <- sweep(-tmp[, , 1], 2, all[, 1], '+')
-  SUM_XX <- sweep(-tmp[, , 2], 2, all[, 2], '+')
-  SUM_XY <- sweep(-tmp[, , 3], 2, all[, 3], '+')
-  SUM_Y  <- sweep(-tmp[, , 4], 2, all[, 4], '+')
+  SUM_X  <- sweep(-matrix(tmp[, , 1], K), 2, all[, 1], '+')
+  SUM_XX <- sweep(-matrix(tmp[, , 2], K), 2, all[, 2], '+')
+  SUM_XY <- sweep(-matrix(tmp[, , 3], K), 2, all[, 3], '+')
 
+  n.sets      <- length(ind.train) - table(ind.sets)
   center.sets <- sweep(SUM_X, 1, n.sets, '/')
   scale.sets  <- sqrt(sweep(SUM_XX, 1, n.sets, '/') - center.sets^2)
   keep        <- (colSums(scale.sets > 1e-6) == K)
-  resid.sets  <- (SUM_XY - center.sets * SUM_Y) /
+  resid.sets  <- (SUM_XY - sweep(SUM_X, 1, y_null.train, '*')) /
     sweep(scale.sets, 1, n.sets, '*')
 
   list(keep = keep, center = center.sets, scale = scale.sets, resid = resid.sets)
+}
+
+################################################################################
+
+null_pred <- function(y, base) {
+
+  ind0 <- which(y == 0)
+  ind1 <- which(y == 1)
+  x <- base
+
+  f <- function(b0) {
+    sum(1 / (1 + exp(b0 + base[ind1]))) -
+      sum(1 / (1 + exp(-(b0 + base[ind0]))))
+  }
+  b0 <- stats::uniroot(f, c(-20, 20), check.conv = TRUE,
+                       tol = .Machine$double.eps)$root
+
+  c(b0, mean(1 / (1 + exp(-(b0 + x)))))
 }
 
 ################################################################################
@@ -33,9 +51,8 @@ summaries <- function(X, y.train, ind.train, ind.col,
 #'
 #' @return A named list with following variables:
 #'   \item{intercept}{A vector of intercepts, corresponding to each lambda.}
-#'   \item{beta}{The fitted matrix of coefficients, store in sparse matrix
-#'     representation. The number of rows is equal to the number of
-#'     coefficients, and the number of columns is equal to `nlambda`.}
+#'   \item{beta}{The vector of coefficients that minimized the loss on the
+#'     validation set.}
 #'   \item{iter}{A vector of length `nlambda` containing the number of
 #'     iterations until convergence at each value of `lambda`.}
 #'   \item{lambda}{The sequence of regularization parameter values in the path.}
@@ -63,17 +80,16 @@ summaries <- function(X, y.train, ind.train, ind.col,
 #'     than `1e-6`. Features with 'scale' less than 1e-6 are removed from
 #'     model fitting.}
 #'
-#' @import Matrix
-#'
 #' @keywords internal
 #'
 COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
                                family, lambda, center, scale, resid, alpha,
                                eps, max.iter, dfmax, warn,
-                               ind.val, covar.val, y.val, n.abort, nlam.min) {
+                               ind.val, covar.val, y.val, n.abort, nlam.min,
+                               b0, base.train, base.val) {
 
-  assert_lengths(y.train, ind.train, rows_along(covar.train))
-  assert_lengths(y.val, ind.val, rows_along(covar.val))
+  assert_lengths(y.train, base.train, ind.train, rows_along(covar.train))
+  assert_lengths(y.val, base.val, ind.val, rows_along(covar.val))
   assert_lengths(c(ind.col, cols_along(covar.train)), center, scale, resid)
   stopifnot(length(intersect(ind.train, ind.val)) == 0)
 
@@ -87,8 +103,8 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
       lambda, center, scale, resid, alpha, eps, max.iter, dfmax, warn,
       ind.val, covar.val, y.val - y.train.mean, n.abort, nlam.min)
 
-    b <- Matrix(res[[1]], sparse = TRUE)
-    a <- rep(y.train.mean, ncol(b))
+    a <- y.train.mean
+    b <- res[[1]]
     loss <- res[[2]]
     iter <- res[[3]]
     loss.val <- res[[4]]
@@ -96,15 +112,15 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
   } else if (family == "binomial") {
 
     res <- COPY_cdfit_binomial_hsr(
-      X, y.train, ind.train, ind.col, covar.train,
-      lambda, center, scale, resid, alpha, eps, max.iter, dfmax, warn,
-      ind.val, covar.val, y.val, n.abort, nlam.min)
+      X, y.train, base.train, ind.train, ind.col, covar.train,
+      lambda, center, scale, resid, alpha, b0, eps, max.iter, dfmax, warn,
+      ind.val, covar.val, y.val, base.val, n.abort, nlam.min)
 
     a <- res[[1]]
-    b <- Matrix(res[[2]], sparse = TRUE)
+    b <- res[[2]]
     loss <- res[[3]]
     iter <- res[[4]]
-    loss.val <- -res[[5]]
+    loss.val <- res[[5]]
 
   } else {
     stop("Current version only supports Gaussian or Binominal response!")
@@ -112,8 +128,6 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 
   ## Eliminate saturated lambda values, if any
   ind <- !is.na(iter)
-  a <- a[ind]
-  b <- b[, ind, drop = FALSE]
   iter <- iter[ind]
   lambda <- lambda[ind]
   loss <- loss[ind] / length(ind.train)
@@ -124,10 +138,7 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 
   ## Unstandardize coefficients:
   bb <- b / scale
-  aa <- a - as.numeric(crossprod(center, bb))
-
-  ## Names
-  names(aa) <- colnames(bb) <- signif(lambda, digits = 4)
+  aa <- a - sum(center * bb)
 
   ## Output
   structure(list(
@@ -149,7 +160,7 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #' Sparse regression path
 #'
 #' Fit solution paths for linear or logistic regression models penalized by
-#' lasso (alpha = 1) or elastic-net (1e-6 < alpha < 1) over a grid of values
+#' lasso (alpha = 1) or elastic-net (1e-4 < alpha < 1) over a grid of values
 #' for the regularization parameter lambda.
 #'
 #' The objective function for linear regression (\code{family = "gaussian"}) is
@@ -158,11 +169,12 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #' \textrm{penalty}.}
 #'
 #' @param family Either "gaussian" (linear) or "binomial" (logistic).
-#' @param alpha The elastic-net mixing parameter that controls the relative
+#' @param alphas The elastic-net mixing parameter that controls the relative
 #' contribution from the lasso (l1) and the ridge (l2) penalty. The penalty is
 #' defined as \deqn{ \alpha||\beta||_1 + (1-\alpha)/2||\beta||_2^2.}
 #' \code{alpha = 1} is the lasso penalty and \code{alpha} in between `0`
-#' (`1e-6`) and `1` is the elastic-net penalty. Default is `0.5`.
+#' (`1e-4`) and `1` is the elastic-net penalty. Default is `1`. **You can
+#' pass multiple values, and only one will be used (optimized by grid-search).**
 #' @param lambda.min The smallest value for lambda, **as a fraction of
 #' lambda.max**. Default is `.0001` if the number of observations is larger than
 #' the number of variables and `.001` otherwise.
@@ -170,10 +182,10 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #' @param eps Convergence threshold for inner coordinate descent.
 #' The algorithm iterates until the maximum change in the objective after any
 #' coefficient update is less than `eps` times the null deviance.
-#' Default value is `1e-7`.
+#' Default value is `1e-5`.
 #' @param max.iter Maximum number of iterations. Default is `1000`.
 #' @param dfmax Upper bound for the number of nonzero coefficients. Default is
-#' `20e3` because, for large data sets, computational burden may be
+#' `50e3` because, for large data sets, computational burden may be
 #' heavy for models with a large number of nonzero coefficients.
 #' @param warn Return warning messages for failures to converge and model
 #' saturation? Default is `FALSE`.
@@ -182,9 +194,9 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #' @param ind.sets Integer vectors of values between `1` and `K` specifying
 #'   which set each index of the training set is in. Default randomly assigns
 #'   these values.
-#' @param return.all Whether to return coefficients for all lambda values.
-#'   Default is `FALSE` and returns only coefficients which maximize prediction
-#'   on the corresponding validation set.
+#' @param return.all Whether to return coefficients for all alpha and lambda
+#'   values. Default is `FALSE` and returns only coefficients which maximize
+#'   prediction on the validation sets.
 #' @param nlam.min Minimum number of lambda values to investigate. Default is `50`.
 #' @param n.abort Number of lambda values for which prediction on the validation
 #'   set must decrease before stopping. Default is `10`.
@@ -193,16 +205,17 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #'
 COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
                                family = c("gaussian", "binomial"),
-                               alpha = 0.5,
+                               alphas = 1,
                                K = 10,
                                ind.sets = sample(rep_len(1:K, n)),
                                nlambda = 200,
                                lambda.min = `if`(n > p, .0001, .001),
                                nlam.min = 50,
                                n.abort = 10,
-                               eps = 1e-7,
+                               base.train = NULL,
+                               eps = 1e-5,
                                max.iter = 1000,
-                               dfmax = 20e3,
+                               dfmax = 50e3,
                                warn = FALSE,
                                return.all = FALSE,
                                ncores = 1) {
@@ -214,7 +227,7 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
   assert_lengths(y.train, ind.train, rows_along(covar.train), ind.sets)
   p <- length(ind.col) + ncol(covar.train)
 
-  if (alpha > 1 || alpha < 1e-4) stop("alpha must be between 1e-4 and 1.")
+  if (any(alphas < 1e-4 | alphas > 1)) stop("alpha must be between 1e-4 and 1.")
 
   if (nlambda < 2) stop("nlambda must be at least 2")
 
@@ -227,22 +240,35 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
     tryCatch(y.train <- as.numeric(y.train), error = function(e)
       stop("y.train must numeric or able to be coerced to numeric"))
 
-  if (family == "binomial") y.train <- transform_levels(y.train)
+  if (is.null(base.train)) base.train <- rep(0, n)
+
+  l.ind.sets <- split(seq_along(ind.sets), factor(ind.sets, levels = 1:K))
+  if (family == "binomial") {
+    y.train <- transform_levels(y.train)
+    tmp <- sapply(l.ind.sets, function(ind) {
+      null_pred(y.train[-ind], base.train[-ind])
+    })
+    b0 <- tmp[1, ]
+    assert_lengths(b0, 1:K)
+    y_null.train <- tmp[2, ]
+  } else {
+    assert_multiple(y.train)
+    y.train <- y.train - base.train
+    y_null.train <- sapply(l.ind.sets, function(ind) mean(y.train[-ind]))
+  }
 
   # Get summaries
   ## Get also for covariables
-  summaries.covar <-
-    summaries(X, y.train, ind.train, integer(0), covar.train, ind.sets, K)
+  summaries.covar <- summaries(X, y.train, y_null.train, ind.train, integer(0),
+                               covar.train, ind.sets, K)
   if (!all(summaries.covar$keep))
     stop("Please use covariables with some variation.")
 
   ## Parallelize over columns
   list_summaries <-
-    big_apply(X, a.FUN = function(X, ind, y.train, ind.train, ind.sets, K) {
-      list(
-        summaries(X, y.train, ind.train, ind, ind.sets = ind.sets, K = K)
-      )
-    }, a.combine = 'c', ncores = ncores, ind = ind.col, y.train = y.train,
+    big_parallelize(X, p.FUN = function(X, ind, y.train, ind.train, ind.sets, K) {
+      summaries(X, y.train, y_null.train, ind.train, ind, ind.sets = ind.sets, K = K)
+    }, ncores = ncores, ind = ind.col, y.train = y.train,
     ind.train = ind.train, ind.sets = ind.sets, K = K)
 
   keep <- do.call('c', lapply(list_summaries, function(x) x[["keep"]]))
@@ -252,11 +278,14 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
   if (ncores == 1) {
     registerDoSEQ()
   } else {
-    cl <- parallel::makeCluster(ncores)
+    cluster_type <- getOption("bigstatsr.cluster.type")
+    cl <- parallel::makeCluster(ncores, type = cluster_type)
     doParallel::registerDoParallel(cl)
     on.exit(parallel::stopCluster(cl), add = TRUE)
   }
-  cross.res <- foreach(ic = 1:K) %dopar% {
+
+  alphas <- sort(alphas)
+  cross.res <- foreach(alpha = alphas) %:% foreach(ic = 1:K) %dopar% {
 
     in.val <- (ind.sets == ic)
 
@@ -273,7 +302,7 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
     lambda <- exp(
       seq(log(lambda.max), log(lambda.max * lambda.min), length.out = nlambda))
 
-    mod <- COPY_biglasso_part(
+    COPY_biglasso_part(
       X, y.train = y.train[!in.val],
       ind.train = ind.train[!in.val],
       ind.col = ind.col[keep],
@@ -282,23 +311,37 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
       ind.val = ind.train[in.val],
       covar.val = covar.train[in.val, , drop = FALSE],
       y.val = y.train[in.val],
-      n.abort, nlam.min
+      n.abort, nlam.min,
+      ## used only for binomial:
+      b0 = b0[ic],
+      base.train = base.train[!in.val],
+      base.val = base.train[in.val]
     )
   }
 
-  if (return.all) {
-    cross.res
-  } else {
-    structure(lapply(cross.res, function(x) {
-      best <- which.min(x$loss.val)
+  if (return.all) return(cross.res)
+
+  # Choose the best alpha (for the best lambdas)
+  ind.min <- which.min(
+    sapply(cross.res, function(l) {
+      mean(sapply(l, function(x) min(x$loss.val, na.rm = TRUE)))
+    })
+  )
+
+  structure(
+    lapply(cross.res[[ind.min]], function(x) {
       ind <- seq_along(x$ind.col)
       list(
-        intercept  = unname(x$intercept[best]),
-        beta.X     = x$beta[ind, best],
-        beta.covar = x$beta[-ind, best]
+        intercept  = x$intercept,
+        beta.X     = x$beta[ind],
+        beta.covar = x$beta[-ind]
       )
-    }), class = "big_sp_best_list", ind.col = ind.col[keep], family = family)
-  }
+    }),
+    class = "big_sp_best_list",
+    ind.col = ind.col[keep],
+    family = family,
+    alpha = alphas[ind.min]
+  )
 }
 
 ################################################################################
@@ -345,7 +388,7 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
 #' Strong rules for discarding predictors in lasso-type problems.
 #' Journal of the Royal Statistical Society:
 #' Series B (Statistical Methodology), 74: 245–266.
-#' \url{http://dx.doi.org/10.1111/j.1467-9868.2011.01004.x}.
+#' \url{https://doi.org/10.1111/j.1467-9868.2011.01004.x}.
 #'
 #' Zeng, Y., and Breheny, P. (2016). The biglasso Package: A Memory- and
 #' Computation-Efficient Solver for Lasso Model Fitting with Big Data in R.
@@ -362,7 +405,7 @@ big_spLinReg <- function(X, y.train,
   check_args()
 
   COPY_biglasso_main(X, y.train, ind.train, ind.col, covar.train,
-                     family = "gaussian", ...)
+                     family = "gaussian", ncores = ncores, ...)
 }
 
 ################################################################################
@@ -387,7 +430,7 @@ big_spLogReg <- function(X, y01.train,
   check_args()
 
   COPY_biglasso_main(X, y01.train, ind.train, ind.col, covar.train,
-                     family = "binomial", ...)
+                     family = "binomial", ncores = ncores, ...)
 }
 
 ################################################################################

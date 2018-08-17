@@ -2,6 +2,10 @@
 
 context("PROD_VEC")
 
+set.seed(SEED)
+
+################################################################################
+
 # Simulating some data
 N <- 73
 M <- 43
@@ -32,10 +36,10 @@ for (t in TEST.TYPES) {
     ind.col <- sample(M, size = 11)
     y.col <- rnorm(21)
     expect_error(big_prodVec(X, y.col, ind.row, ind.col),
-                 "incompatibility between dimensions")
+                 "Incompatibility between dimensions.")
     y.row <- rnorm(11)
     expect_error(big_cprodVec(X, y.row, ind.row, ind.col),
-                 "incompatibility between dimensions")
+                 "Incompatibility between dimensions.")
   })
 }
 

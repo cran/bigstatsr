@@ -4,8 +4,8 @@
 \alias{big_spLinReg}
 \title{Sparse linear regression}
 \usage{
-big_spLinReg(X, y.train, ind.train = rows_along(X), ind.col = cols_along(X),
-  covar.train = NULL, ncores = 1, ...)
+big_spLinReg(X, y.train, ind.train = rows_along(X),
+  ind.col = cols_along(X), covar.train = NULL, ncores = 1, ...)
 }
 \arguments{
 \item{X}{A \link[=FBM-class]{FBM}.}
@@ -28,11 +28,12 @@ You may use \link{nb_cores}.}
 
 \item{...}{Arguments passed on to \code{COPY_biglasso_main}
 \describe{
-  \item{alpha}{The elastic-net mixing parameter that controls the relative
+  \item{alphas}{The elastic-net mixing parameter that controls the relative
 contribution from the lasso (l1) and the ridge (l2) penalty. The penalty is
 defined as \deqn{ \alpha||\beta||_1 + (1-\alpha)/2||\beta||_2^2.}
 \code{alpha = 1} is the lasso penalty and \code{alpha} in between \code{0}
-(\code{1e-6}) and \code{1} is the elastic-net penalty. Default is \code{0.5}.}
+(\code{1e-4}) and \code{1} is the elastic-net penalty. Default is \code{1}. \strong{You can
+pass multiple values, and only one will be used (optimized by grid-search).}}
   \item{lambda.min}{The smallest value for lambda, \strong{as a fraction of
 lambda.max}. Default is \code{.0001} if the number of observations is larger than
 the number of variables and \code{.001} otherwise.}
@@ -40,10 +41,10 @@ the number of variables and \code{.001} otherwise.}
   \item{eps}{Convergence threshold for inner coordinate descent.
 The algorithm iterates until the maximum change in the objective after any
 coefficient update is less than \code{eps} times the null deviance.
-Default value is \code{1e-7}.}
+Default value is \code{1e-5}.}
   \item{max.iter}{Maximum number of iterations. Default is \code{1000}.}
   \item{dfmax}{Upper bound for the number of nonzero coefficients. Default is
-\code{20e3} because, for large data sets, computational burden may be
+\code{50e3} because, for large data sets, computational burden may be
 heavy for models with a large number of nonzero coefficients.}
   \item{warn}{Return warning messages for failures to converge and model
 saturation? Default is \code{FALSE}.}
@@ -52,9 +53,9 @@ saturation? Default is \code{FALSE}.}
   \item{ind.sets}{Integer vectors of values between \code{1} and \code{K} specifying
 which set each index of the training set is in. Default randomly assigns
 these values.}
-  \item{return.all}{Whether to return coefficients for all lambda values.
-Default is \code{FALSE} and returns only coefficients which maximize prediction
-on the corresponding validation set.}
+  \item{return.all}{Whether to return coefficients for all alpha and lambda
+values. Default is \code{FALSE} and returns only coefficients which maximize
+prediction on the validation sets.}
   \item{nlam.min}{Minimum number of lambda values to investigate. Default is \code{50}.}
   \item{n.abort}{Number of lambda values for which prediction on the validation
 set must decrease before stopping. Default is \code{10}.}
@@ -101,22 +102,18 @@ set.seed(1)
 # simulating some data
 N <- 230
 M <- 730
-X <- FBM(N, M, init = rnorm(N * M, sd = 5), type = "integer")
-y <- X[, 1:5] + rnorm(N)
+X <- FBM(N, M, init = rnorm(N * M, sd = 5))
+y <- rowSums(X[, 1:5]) + rnorm(N)
 covar <- matrix(rnorm(N * 3), N)
 
 ind.train <- sort(sample(nrow(X), 150))
 ind.test <- setdiff(rows_along(X), ind.train)
 
 test <- big_spLinReg(X, y[ind.train], ind.train = ind.train,
-                     covar.train = covar[ind.train, ],
-                     warn = FALSE)
-# K = 10 predictions
-str(preds <- predict(test, X, ind.row = ind.test, covar.row = covar[ind.test, ]))
-# Combine them
-preds2 <- rowMeans(preds)
+                     covar.train = covar[ind.train, ])
 
-plot(preds2, y[ind.test], pch = 20); abline(0, 1, col = "red")
+preds <- predict(test, X, ind.row = ind.test, covar.row = covar[ind.test, ])
+plot(preds, y[ind.test], pch = 20); abline(0, 1, col = "red")
 }
 \references{
 Tibshirani, R., Bien, J., Friedman, J., Hastie, T.,
@@ -124,7 +121,7 @@ Simon, N., Taylor, J. and Tibshirani, R. J. (2012),
 Strong rules for discarding predictors in lasso-type problems.
 Journal of the Royal Statistical Society:
 Series B (Statistical Methodology), 74: 245–266.
-\url{http://dx.doi.org/10.1111/j.1467-9868.2011.01004.x}.
+\url{https://doi.org/10.1111/j.1467-9868.2011.01004.x}.
 
 Zeng, Y., and Breheny, P. (2016). The biglasso Package: A Memory- and
 Computation-Efficient Solver for Lasso Model Fitting with Big Data in R.
