@@ -1,3 +1,39 @@
+## bigstatsr 0.9.0
+
+- Use *mio* instead of *boost* for memory-mapping.
+
+- Add a parameter `base.row` to `predict.big_sp_list()` and automatically detect if needed (as well as for `covar.row`).
+
+- Possibility to subset a `big_sp_list` without losing attributes, so that one can access one model (corresponding to one alpha) even if it is not the 'best'.
+
+- Add parameters `pf.X` and `pf.covar` in `big_sp***Reg()` to provide different penalization for each variable (possibly no penalization at all). 
+
+## bigstatsr 0.8.4
+
+Add `%*%`, `crossprod` and `tcrossprod` operations for 'double' FBMs.
+
+## bigstatsr 0.8.3
+
+Now also returns the number of non-zero variables (`$nb_active`) and the number of candidate variables (`$nb_candidate`) for each step of the regularization paths of `big_spLinReg()` and `big_spLogReg()`.
+
+## bigstatsr 0.8.0
+
+- Parameters `warn` and `return.all` of `big_spLinReg()` and `big_spLogReg()` are deprecated; now always return the maximum information. Now provide two methods (`summary` and `plot`) to get a quick assessment of the fitted models.
+
+## bigstatsr 0.7.3
+
+- Check of missing values for input vectors (indices and targets) and matrices (covariables).
+
+- `AUC()` is now stricter: it accepts only 0s and 1s for `target`.
+
+## bigstatsr 0.7.1
+
+- `$bm()` and `$bm.desc()` have been added in order to get an `FBM` as a `filebacked.big.matrix`. This enables using {bigmemory} functions.
+
+## bigstatsr 0.7.0
+
+- Type `float` added.
+
 ## bigstatsr 0.6.2
 
 - `big_write` added.
@@ -16,7 +52,7 @@
 
 ## bigstatsr 0.5.0
 
-- There have been some changes regarding how conversion between types is checked. Before, you would get a warning for any possible loss of precision (without actually checking it). Now, any loss of precision due to conversion between types is reported as a warning, and only in this case. If you want to disable this feature, you can use `options(bigstatsr.downcast.warning = FALSE)`.
+- There have been some changes regarding how conversion between types is checked. Before, you would get a warning for any possible loss of precision (without actually checking it). Now, any loss of precision due to conversion between types is reported as a warning, and only in this case. If you want to disable this feature, you can use `options(bigstatsr.downcast.warning = FALSE)`, or you can use `without_downcast_warning()` to disable this warning for one call.
 
 ## bigstatsr 0.4.1
 
@@ -40,11 +76,11 @@
 
 ## bigstatsr 0.3.3
 
-- Before, this package used only the "PSOCK" type of cluster, which has some significant overhead. Now, it uses the "FORK" type on non-Windows systems. You can change this with `options(bigstatsr.cluster.type = "PSOCK")`.
+- Before, this package used only the "PSOCK" type of cluster, which has some significant overhead. Now, it uses the "FORK" type on non-Windows systems. You can change this with `options(bigstatsr.cluster.type = "PSOCK")`. Uses "PSOCK" in 0.4.0.
 
 ## bigstatsr 0.3.2
 
-- you can now provide multiple $\alpha$ values (as a numeric vector) in `big_spLinReg` and `big_spLogReg`. One will be choosed by grid-search.
+- you can now provide multiple $\alpha$ values (as a numeric vector) in `big_spLinReg` and `big_spLogReg`. One will be chosen by grid-search.
 
 ## bigstatsr 0.3.1
 
@@ -60,7 +96,7 @@
 
 ## bigstatsr 0.2.4
 
-- **Integrate Cross-Model Selection and Averagind (CMSA) directly in `big_spLinReg` and `big_spLogReg`, a procedure that automatically chooses the value of the $\lambda$ hyper-parameter.**
+- **Integrate Cross-Model Selection and Averaging (CMSA) directly in `big_spLinReg` and `big_spLogReg`, a procedure that automatically chooses the value of the $\lambda$ hyper-parameter.**
 
 - **Speed up `big_spLinReg` and `big_spLogReg` ([issue #12](https://github.com/privefl/bigstatsr/issues/12))**
 

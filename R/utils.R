@@ -1,10 +1,10 @@
 ################################################################################
 
 # Global variables
-ALL.TYPES <- structure(c(1L, 1L, 2L, 4L, 8L),
+ALL.TYPES <- structure(c(1L, 1L, 2L, 4L, 6L, 8L),
                        names = c("raw", "unsigned char", "unsigned short",
-                                 "integer", "double"))
-globalVariables("ic") # for foreach
+                                 "integer", "float", "double"))
+globalVariables(c("ic", "mods", "k", "loss_index", "set"))
 
 ################################################################################
 
@@ -41,7 +41,7 @@ CutBySize <- function(m, block.size, nb = ceiling(m / block.size)) {
   } else if (nb == 0) {  ## block.size = Inf
     nb <- 1
   }
-  assert_pos(nb)
+  assert_pos(nb); assert_int(nb)
   int <- m / nb
 
   upper <- round(1:nb * int)
@@ -59,18 +59,9 @@ seq2 <- function(lims) {
 
 ################################################################################
 
-transform_levels <- function(y, new.levels = 0:1) {
-  y2 <- factor(y, ordered = TRUE)
-  lvl <- levels(y2)
-  if (length(lvl) != 2)
-    stop("You must have exactly two levels in y.")
-  levels(y2) <- new.levels
-  as.numeric(as.character(y2))
-}
-
-################################################################################
-
 getAvailMem <- function(format = TRUE) {
+
+  .Deprecated("memuse::Sys.meminfo()")
 
   gc()
 

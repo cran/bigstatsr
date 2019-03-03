@@ -17,14 +17,18 @@
 #' qplot(y = 1:10) + theme_bigstatsr()
 theme_bigstatsr <- function(size.rel = 1) {
   theme_bw() +
-    theme(plot.title    = element_text(size = rel(2.0 * size.rel), hjust = 0.5),
-          plot.subtitle = element_text(size = rel(1.5 * size.rel), hjust = 0.5),
-          legend.title  = element_text(size = rel(1.8 * size.rel)),
-          legend.text   = element_text(size = rel(1.3 * size.rel)),
-          axis.title    = element_text(size = rel(1.5 * size.rel)),
-          axis.text     = element_text(size = rel(1.2 * size.rel)),
-          legend.key.height = unit(1.3 * size.rel, "line"),
-          legend.key.width  = unit(1.3 * size.rel, "line"))
+    theme(
+      plot.title    = element_text(size = rel(2.0 * size.rel), hjust = 0.5),
+      plot.subtitle = element_text(size = rel(1.5 * size.rel), hjust = 0.5),
+      legend.title  = element_text(size = rel(1.8 * size.rel)),
+      legend.text   = element_text(size = rel(1.3 * size.rel)),
+      axis.title    = element_text(size = rel(1.5 * size.rel)),
+      axis.text     = element_text(size = rel(1.2 * size.rel)),
+      strip.text.x  = element_text(size = rel(1.8 * size.rel)),
+      strip.text.y  = element_text(size = rel(1.8 * size.rel)),
+      legend.key.height = unit(1.3 * size.rel, "line"),
+      legend.key.width  = unit(1.3 * size.rel, "line")
+    )
 }
 
 MY_THEME <- function(p, coeff = 1) {
@@ -59,7 +63,7 @@ MY_THEME <- function(p, coeff = 1) {
 #' to get more familiar with the package **ggplot2**.
 #'
 #' @export
-#' @import ggplot2 grid
+#' @import ggplot2
 #' @importFrom graphics plot
 #'
 #' @example examples/example-plot-bigSVD.R
@@ -201,6 +205,43 @@ plot.mhtest <- function(x, type = c("hist", "Manhattan", "Q-Q", "Volcano"),
   }
 
   last_plot() + theme_bigstatsr(size.rel = coeff)
+}
+
+################################################################################
+
+#' Plot method
+#'
+#' Plot method for class `big_sp_list`.
+#'
+#' @param x An object of class `big_sp_list`.
+#' @param coeff Relative size of text. Default is `1`.
+#' @param ... Not used.
+#'
+#' @inherit plot.big_SVD return
+#'
+#' @export
+#' @import ggplot2 foreach
+#' @importFrom graphics plot
+#'
+plot.big_sp_list <- function(x, coeff = 1, ...) {
+
+  assert_nodots()
+
+  info <- foreach(mods = x, .combine = "rbind") %do% {
+    foreach(k = seq_along(mods), .combine = "rbind") %do% {
+      mod <- mods[[k]]
+      loss <- mod$loss.val
+      cbind.data.frame(set = k, alpha = mod$alpha, message = mod$message,
+                       loss_index = seq_along(loss), loss = loss)
+    }
+  }
+
+  ggplot(info) +
+    theme_bigstatsr(size.rel = coeff) +
+    geom_point(aes(loss_index, loss, color = as.factor(set))) +
+    facet_wrap(~alpha, labeller = signif) +
+    scale_colour_discrete(guide = FALSE) +
+    labs(x = "Index", y = "Loss for each validation set")
 }
 
 ################################################################################

@@ -1,6 +1,5 @@
 /******************************************************************************/
 
-#include <RcppArmadillo.h>
 #include <bigstatsr/SubMatCovAcc.h>
 #include <bigstatsr/biglasso/linear.hpp>
 
@@ -10,7 +9,7 @@ using namespace Rcpp;
 
 #define CALL_COPY_CDFIT_GAUSSIAN_HSR(ACC, ACC_VAL) {                           \
   return bigstatsr::biglassoLin::COPY_cdfit_gaussian_hsr(ACC, y,               \
-    lambda, center, scale, resid, alpha, eps, max_iter, dfmax, warn,           \
+    lambda, center, scale, pf, resid, alpha, eps, max_iter, dfmax,             \
     ACC_VAL, y_val, n_abort, nlam_min);                                        \
 }
 
@@ -24,12 +23,12 @@ List COPY_cdfit_gaussian_hsr(Environment BM,
                              const NumericVector& lambda,
                              const NumericVector& center,
                              const NumericVector& scale,
+                             const NumericVector& pf,
                              NumericVector& resid,
                              double alpha,
                              double eps,
                              int max_iter,
                              int dfmax,
-                             bool warn,
                              const IntegerVector& row_idx_val,
                              const NumericMatrix& covar_val,
                              const NumericVector& y_val,

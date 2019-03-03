@@ -15,9 +15,7 @@
 #'
 #' @seealso [big_spLinReg] and [big_spLogReg].
 #'
-predict.big_sp <- function(object, X,
-                           ind.row = rows_along(X),
-                           ind.col = object$ind.col,
+predict.big_sp <- function(object, X, ind.row, ind.col,
                            covar.row = NULL,
                            ...) {
 
@@ -52,12 +50,13 @@ predict.big_sp <- function(object, X,
 
 #' Predict method
 #'
-#' Predict method for class `big_sp_best_list`.
+#' Predict method for class `big_sp_list`.
 #'
-#' @param object Object of class `big_sp_best_list`.
+#' @param object Object of class `big_sp_list`.
 #' @inheritParams bigstatsr-package
 #' @param ... Not used.
 #' @param proba Whether to return probabilities?
+#' @param base.row Vector of base predictions, corresponding to `ind.row`.
 #'
 #' @return A vector of scores, corresponding to `ind.row`.
 #'
@@ -66,35 +65,54 @@ predict.big_sp <- function(object, X,
 #'
 #' @seealso [big_spLinReg] and [big_spLogReg].
 #'
-predict.big_sp_best_list <- function(object, X,
-                                     ind.row = rows_along(X),
-                                     ind.col = attr(object, "ind.col"),
-                                     covar.row = NULL,
-                                     proba = (attr(object, "family") == "binomial"),
-                                     ...) {
+predict.big_sp_list <- function(object, X,
+                                ind.row = rows_along(X),
+                                ind.col = attr(object, "ind.col"),
+                                covar.row = NULL,
+                                proba = (attr(object, "family") == "binomial"),
+                                base.row = NULL,
+                                ...) {
 
   assert_nodots()
   check_args()
 
-  K_scores <- sapply(object, function(obj) {
 
-    beta.X <- obj$beta.X
-    ind.nozero <- which(beta.X != 0)
 
-    scores <- big_prodVec(X, beta.X[ind.nozero],
-                          ind.row = ind.row,
-                          ind.col = ind.col[ind.nozero]) +
-      obj$intercept
+  if (is.null(base.row)) {
+    if (any(attr(object, "base") != 0)) {
+      stop2("You forgot to provide 'base.row' in predict().")
+    }
+    base.row <- rep(0, length(ind.row))
+  } else {
+    assert_lengths(base.row, ind.row)
+  }
 
-    if (!is.null(covar.row))
-      scores <- scores + drop(covar.row %*% obj$beta.covar)
+  covar_used <- (length(attr(object, "pf")) > length(attr(object, "ind.col")))
+  if (covar_used && is.null(covar.row))
+    stop2("You forgot to provide 'covar.row' in predict().")
 
-    scores
-  })
+  summ_best <- summary(object, best.only = TRUE)
+  obj.big_sp <- structure(
+    list(intercept = summ_best$intercept, beta = summ_best$beta[[1]]),
+    class = "big_sp")
 
-  one_score <- rowMeans(K_scores)
-  names(one_score) <- ind.row
+  one_score <- base.row + predict(obj.big_sp, X, ind.row, ind.col, covar.row)
   `if`(proba, 1 / (1 + exp(-one_score)), one_score)
+}
+
+################################################################################
+
+#' @export
+`[.big_sp_list` <- function(x, i, ...) {
+
+  assert_nodots()
+
+  attr <- attributes(x)
+  attr$alphas <- attr$alphas[i]
+
+  r <- NextMethod("[")
+  mostattributes(r) <- attr
+  r
 }
 
 ################################################################################

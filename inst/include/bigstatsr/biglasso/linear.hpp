@@ -32,12 +32,12 @@ List COPY_cdfit_gaussian_hsr(C macc,
                              const NumericVector& lambda,
                              const NumericVector& center,
                              const NumericVector& scale,
+                             const NumericVector& pf,
                              NumericVector& z,
                              double alpha,
                              double eps,
                              int max_iter,
                              int dfmax,
-                             bool warn,
                              C macc_val,
                              const NumericVector& y_val,
                              int n_abort,
@@ -58,15 +58,18 @@ List COPY_cdfit_gaussian_hsr(C macc,
   NumericVector beta_max(p);
   NumericVector loss(L, NA_REAL);
   NumericVector metrics(L, NA_REAL);
+  IntegerVector nb_candidate(L, NA_INTEGER);
+  IntegerVector nb_active(L, NA_INTEGER);
 
   double l1, l2, lam_l, cutoff, shift;
   double max_update, update, thresh, shift_scaled, cpsum;
   size_t i, j, violations;
-  LogicalVector in_A(p); // ever active set
+  LogicalVector in_A(p); // ever-active set
   LogicalVector in_S(p); // strong set
   NumericVector r = Rcpp::clone(y);
-  double sumResid = Rcpp::sum(r);
-  iter[0] = 0;
+  // double sumResid = Rcpp::sum(r);  // always 0..
+  // Rcout << Rcpp::sum(r) << std::endl;
+  nb_active[0] = nb_candidate[0] = iter[0] = 0;
   loss[0] = COPY_gLoss(r);
   thresh = eps * loss[0] / n;
   metrics[0] = metric_min = COPY_gLoss(y_val);
@@ -77,18 +80,17 @@ List COPY_cdfit_gaussian_hsr(C macc,
     // Rcout << "Iteration n°" << l << std::endl;
 
     // Check dfmax
-    if (Rcpp::sum(beta_old != 0) >= dfmax) {
-      return List::create(beta_max, loss, iter, metrics);
+    if (nb_active[l - 1] >= dfmax) {
+      return List::create(beta_max, loss, iter, metrics, "Too many variables",
+                          nb_active, nb_candidate);
     }
 
     lam_l = lambda[l];
     l1 = lam_l * alpha;
     l2 = lam_l - l1;
     // strong set
-    cutoff = 2 * lam_l - lambda[l-1];
-    for (j = 0; j < p; j++) {
-      in_S[j] = (fabs(z[j]) > (cutoff * alpha));
-    }
+    cutoff = (2 * lam_l - lambda[l - 1]) * alpha;
+    in_S = (abs(z) > (pf * cutoff));
 
     // Approx: no check of rest set
     iter[l] = 0;
@@ -106,10 +108,10 @@ List COPY_cdfit_gaussian_hsr(C macc,
             for (i = 0; i < n; i++) {
               cpsum += macc(i, j) * r[i];
             }
-            cpsum = (cpsum - center[j] * sumResid) / scale[j];
-            z[j] = cpsum / n + beta_old[j];
+            // cpsum = (cpsum - center[j] * sumResid) / scale[j];
+            z[j] = cpsum / (scale[j] * n) + beta_old[j];
 
-            shift = COPY_lasso(z[j], l1, l2, 1.0) - beta_old[j];
+            shift = COPY_lasso(z[j], l1 * pf[j], l2 * pf[j]) - beta_old[j];
             if (shift != 0) {
               // compute objective update for checking convergence
               update = shift * shift;
@@ -117,11 +119,12 @@ List COPY_cdfit_gaussian_hsr(C macc,
 
               // update r (residuals)
               shift_scaled = shift / scale[j];
-              sumResid = 0;
+              // sumResid = 0;
               for (i = 0; i < n; i++) {
                 r[i] -= shift_scaled * (macc(i, j) - center[j]);
-                sumResid += r[i];
+                // sumResid += r[i];
               }
+              // Rcout << sumResid << std::endl;
               beta_old[j] += shift; // update beta_old
             }
           }
@@ -132,33 +135,33 @@ List COPY_cdfit_gaussian_hsr(C macc,
 
       // Scan for violations in strong set
       violations = COPY_check_strong_set(
-        in_A, in_S, z, macc, center, scale, beta_old,
-        lam_l, sumResid, alpha, r, n, p);
+        in_A, in_S, z, macc, center, scale, pf, beta_old, l1, l2, r, 0.0);
       if (violations == 0) break;
     }
 
     loss[l] = COPY_gLoss(r);
+    nb_active[l]    = Rcpp::sum(beta_old != 0);
+    nb_candidate[l] = Rcpp::sum(in_A);
 
     pred_val = predict(macc_val, beta_old, center, scale);
     metric = COPY_gLoss(pred_val - y_val);
     // Rcout << metric << std::endl;
     metrics[l] = metric;
-    if (metric < 0.99 * metric_min) {
+    if (metric < metric_min) {
       std::copy(beta_old.begin(), beta_old.end(), beta_max.begin());
       metric_min = metric;
       no_change = 0;
     }
-    if (metric > 0.995 * metrics[l - 1]) {
-      no_change++;
-    }
+    if (metric > metrics[l - 1]) no_change++;
 
     if (l >= nlam_min && no_change >= n_abort) {
-      if (warn) Rcout << "Model doesn't improve anymore; exiting..." << std::endl;
-      return List::create(beta_max, loss, iter, metrics);
+      return List::create(beta_max, loss, iter, metrics, "No more improvement",
+                          nb_active, nb_candidate);
     }
   }
 
-  return List::create(beta_max, loss, iter, metrics);
+  return List::create(beta_max, loss, iter, metrics, "Complete path",
+                      nb_active, nb_candidate);
 }
 
 } }

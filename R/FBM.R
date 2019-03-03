@@ -38,12 +38,14 @@ sub_bk <- function(path, replacement = "") {
 #'   - `$backingfile` or `$bk`: File with extension 'bk' that stores the numeric
 #'     data of the FBM
 #'   - `$rds`: 'rds' file (that may not exist) corresponding to the 'bk' file
-#'   - `$is_saved`: whether this object stored in `$rds`?
+#'   - `$is_saved`: whether this object is stored in `$rds`?
 #'
-#' And two methods:
+#' And some methods:
 #'   - `$save()`: Save the FBM object in `$rds`. Returns the FBM.
 #'   - `add_columns(<ncol_add>)`: Add some columns to the FBM by appending the
 #'     backingfile with some data. Returns the FBM invisibly.
+#'   - `$bm()`: Get this object as a `filebacked.big.matrix`.
+#'   - `$bm.desc()`: Get this object as a `filebacked.big.matrix` descriptor.
 #'
 #' @examples
 #' X <- FBM(10, 10)
@@ -70,7 +72,6 @@ FBM_RC <- methods::setRefClass(
     ncol = "numeric",
     type = "integer",
     backingfile = "character",
-    is_saved = "logical",
 
     #### Active bindings
     # Same idea as in package phaverty/bigmemoryExtras
@@ -85,7 +86,8 @@ FBM_RC <- methods::setRefClass(
     },
 
     bk = function() .self$backingfile,
-    rds = function() sub_bk(.self$bk, ".rds")
+    rds = function() sub_bk(.self$bk, ".rds"),
+    is_saved = function() file.exists(.self$rds)
   ),
 
   methods = list(
@@ -104,7 +106,6 @@ FBM_RC <- methods::setRefClass(
       }
 
       .self$backingfile <- normalizePath(bkfile)
-      .self$is_saved    <- FALSE
       .self$nrow        <- nrow
       .self$ncol        <- ncol
       .self$type        <- ALL.TYPES[type]  # keep int and string
@@ -118,7 +119,6 @@ FBM_RC <- methods::setRefClass(
 
     save = function() {
       saveRDS(.self, .self$rds)
-      .self$is_saved <- TRUE
       .self
     },
 
@@ -145,6 +145,38 @@ FBM_RC <- methods::setRefClass(
         "A Filebacked Big Matrix of type '%s' with %s rows and %s columns.\n",
         typeBM, .self$nrow, .self$ncol))
       invisible(.self)
+    },
+
+    bm.desc = function() {
+
+      if (!requireNamespace("bigmemory", quietly = TRUE))
+        stop2("Please install package {bigmemory}.")
+
+      dirname <- sub(file.path("", "$"), "", dirname(.self$backingfile))
+      n <- .self$nrow + 0
+      m <- .self$ncol + 0
+      FBM_type <- typeof(.self)
+
+      new("big.matrix.descriptor",
+          description = list(
+            sharedType = "FileBacked",
+            filename   = basename(.self$backingfile),
+            dirname    = paste0(dirname, .Platform$file.sep),
+            totalRows  = n,
+            totalCols  = m,
+            rowOffset  = c(0, n),
+            colOffset  = c(0, m),
+            nrow       = n,
+            ncol       = m,
+            rowNames   = NULL,
+            colNames   = NULL,
+            type       = `if`(FBM_type == "unsigned char", "raw", FBM_type),
+            separated  = FALSE
+          ))
+    },
+    bm = function() {
+      desc <- .self$bm.desc()
+      bigmemory::attach.big.matrix(desc)
     }
   )
 )
@@ -157,32 +189,33 @@ FBM_RC$lock("nrow", "type")
 #' @param nrow Number of rows.
 #' @param ncol Number of columns.
 #' @param type Type of the Filebacked Big Matrix (default is `double`). Either
-#' - `"double"`
+#' - `"double"` (double precision -- 64 bits)
+#' - `"float"` (single precision -- 32 bits)
 #' - `"integer"`
 #' - `"unsigned short"`: can store integer values from 0 to 65535.
-#'   It has vocation to become the basis for a `FBM.code65536` class for
-#'   accessing strings.
+#'   It has vocation to become the basis for a `FBM.code65536`.
 #' - `"raw"` or `"unsigned char"`: can store integer values from 0 to 255.
-#'   It is the basis for the [FBM.code256][FBM.code256-class] class for
-#'   accessing 256 arbitrary different numeric values.
+#'   It is the basis for class [FBM.code256][FBM.code256-class] in order to
+#'   access 256 arbitrary different numeric values.
 #'   It is used in [package **bigsnpr**](https://goo.gl/pHCCmo).
 #' @param init Either a single value (e.g. `0`) or as many value as the number
 #'   of elements of the FBM. **Default doesn't initialize the matrix.**
 #' @param backingfile Path to the file storing the Big Matrix on disk.
-#'   An extension ".bk" will be automatically added. Default stores in the
-#'   temporary directory.
-#' @param create_bk Create a backingfile (the default) or use an existing one
-#'   (which should be named by the `backingfile` parameter and have an
-#'   extension ".bk"). For example, this could be used to convert a filebacked
-#'   `big.matrix` from package **bigmemory** to a [FBM][FBM-class].
+#'   **An extension ".bk" will be automatically added.**
+#'   Default stores in the temporary directory.
+#' @param create_bk Whether to create a backingfile (the default) or use an
+#'   existing one (which should be named by the `backingfile` parameter and have
+#'   an extension ".bk"). For example, this could be used to convert a
+#'   filebacked `big.matrix` from package **bigmemory** to a [FBM][FBM-class]
+#'   (see [the corresponding vignette](https://privefl.github.io/bigstatsr/articles/bigstatsr-and-bigmemory.html)).
 #'
 #' @rdname FBM-class
 #'
 #' @export
 #'
 FBM <- function(nrow, ncol,
-                type = c("double", "integer", "unsigned short",
-                         "unsigned char", "raw"),
+                type = c("double", "float", "integer",
+                         "unsigned short", "unsigned char", "raw"),
                 init = NULL,
                 backingfile = tempfile(),
                 create_bk = TRUE) {
@@ -207,15 +240,15 @@ FBM <- function(nrow, ncol,
 #' X[] <- iris   ## you can replace with a df (factors -> integers)
 #' X2 <- as_FBM(iris)
 #' identical(X[], X2[])
-as_FBM <- function(x, type = c("double", "integer", "unsigned short",
-                               "unsigned char", "raw"),
+as_FBM <- function(x, type = c("double", "float", "integer",
+                               "unsigned short", "unsigned char", "raw"),
                    backingfile = tempfile()) {
 
   if (is.matrix(x) || is.data.frame(x)) {
     FBM(nrow = nrow(x), ncol = ncol(x), init = x,
         type = type, backingfile = backingfile)
   } else {
-    stop2("'as_FBM' is not implemented for class '%s'. %s",
+    stop2("'as_FBM()' is not implemented for class '%s'. %s",
           class(x), "Feel free to open an issue.")
   }
 }
@@ -319,5 +352,16 @@ setMethod("length", signature(x = "FBM"), function(x) prod(dim(x)))
 #' @rdname FBM-methods
 #' @export
 setMethod("typeof", signature(x = "FBM"), function(x) names(x$type))
+
+################################################################################
+
+#' @rdname FBM-methods
+#' @export
+setMethod("diag", signature(x = "FBM"), function(x) {
+  d <- min(dim(x))
+  dseq <- seq_len(d)
+  ind <- cbind(dseq, dseq)
+  x[ind]
+})
 
 ################################################################################
