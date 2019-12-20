@@ -139,7 +139,7 @@ predict.mhtest <- function(object, scores = object$score, log10 = TRUE, ...) {
 
   assert_nodots()
   scores.trans <- attr(object, "transfo")(scores)
-  lpval <- attr(object, "predict")(scores.trans)
+  lpval        <- attr(object, "predict")(scores.trans)
 
   `if`(log10, lpval, 10^lpval)
 }
@@ -179,14 +179,13 @@ predict.big_SVD <- function(object, X = NULL,
     sweep(object$u, 2, object$d, '*')
   } else {
     check_args()
-
-    # Multiplication with clever scaling (see vignettes)
-    v2 <- object$v / object$scale
-    Xv2 <- big_prodMat(X, v2,
-                       ind.row = ind.row,
-                       ind.col = ind.col,
-                       block.size = block.size)
-    sweep(Xv2, 2, crossprod(object$center, v2), '-')
+    # X * V
+    big_prodMat(X, object$v,
+                ind.row = ind.row,
+                ind.col = ind.col,
+                block.size = block.size,
+                center = object$center,
+                scale  = object$scale)
   }
 }
 

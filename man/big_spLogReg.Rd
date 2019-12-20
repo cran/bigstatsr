@@ -4,11 +4,25 @@
 \alias{big_spLogReg}
 \title{Sparse logistic regression}
 \usage{
-big_spLogReg(X, y01.train, ind.train = rows_along(X),
-  ind.col = cols_along(X), covar.train = NULL, base.train = NULL,
-  pf.X = NULL, pf.covar = NULL, alphas = 1, K = 10,
-  ind.sets = NULL, nlambda = 200, nlam.min = 50, n.abort = 10,
-  dfmax = 50000, ncores = 1, ...)
+big_spLogReg(
+  X,
+  y01.train,
+  ind.train = rows_along(X),
+  ind.col = cols_along(X),
+  covar.train = NULL,
+  base.train = NULL,
+  pf.X = NULL,
+  pf.covar = NULL,
+  alphas = 1,
+  K = 10,
+  ind.sets = NULL,
+  nlambda = 200,
+  nlam.min = 50,
+  n.abort = 10,
+  dfmax = 50000,
+  ncores = 1,
+  ...
+)
 }
 \arguments{
 \item{X}{A \link[=FBM-class]{FBM}.}
@@ -29,9 +43,7 @@ Default is \code{NULL} and corresponds to only adding an intercept to each model
 
 \item{base.train}{Vector of base predictions. Model will be learned starting
 from these predictions. This can be useful if you want to previously fit
-a model with large-effect variables that you don't want to penalize.
-\strong{Don't forget to add those predictions when you use \code{predict}
-and make sure you don't use \code{proba = TRUE} when you do so.}}
+a model with large-effect variables that you don't want to penalize.}
 
 \item{pf.X}{A multiplicative factor for the penalty applied to each coefficient.
 If supplied, \code{pf.X} must be a numeric vector of the same length as \code{ind.col}.
@@ -70,19 +82,20 @@ heavy for models with a large number of nonzero coefficients.}
 \item{ncores}{Number of cores used. Default doesn't use parallelism.
 You may use \link{nb_cores}.}
 
-\item{...}{Arguments passed on to \code{COPY_biglasso_main}
-\describe{
-  \item{lambda.min}{The smallest value for lambda, \strong{as a fraction of
+\item{...}{
+  Arguments passed on to \code{\link[=COPY_biglasso_main]{COPY_biglasso_main}}
+  \describe{
+    \item{\code{lambda.min.ratio}}{The smallest value for lambda, \strong{as a fraction of
 lambda.max}. Default is \code{.0001} if the number of observations is larger than
 the number of variables and \code{.001} otherwise.}
-  \item{eps}{Convergence threshold for inner coordinate descent.
+    \item{\code{eps}}{Convergence threshold for inner coordinate descent.
 The algorithm iterates until the maximum change in the objective after any
 coefficient update is less than \code{eps} times the null deviance.
 Default value is \code{1e-5}.}
-  \item{max.iter}{Maximum number of iterations. Default is \code{1000}.}
-  \item{warn}{Deprecated. Now return the reason of completion as \code{$message}.}
-  \item{return.all}{Deprecated. Now always return all models.}
-}}
+    \item{\code{max.iter}}{Maximum number of iterations. Default is \code{1000}.}
+    \item{\code{warn}}{Deprecated. Now return the reason of completion as \verb{$message}.}
+    \item{\code{return.all}}{Deprecated. Now always return all models.}
+  }}
 }
 \value{
 Return an object of class \code{big_sp_list} (a list of \code{length(alphas)}
@@ -113,9 +126,8 @@ predictions (scores) for the inner validation set are computed,
 \item the vector of coefficients corresponding to the previous vector of
 scores is chosen.
 }
-\item The \code{K} resulting vectors of coefficients can then be combined into one
-vector (see \link{get_beta}) or you can just combine the predictions
-(e.g. using \code{predict} followed by \code{rowMeans}).
+\item The \code{K} resulting vectors of coefficients are then averaged into one final
+vector of coefficients.
 }
 }
 \examples{
@@ -156,12 +168,16 @@ Tibshirani, R., Bien, J., Friedman, J., Hastie, T.,
 Simon, N., Taylor, J. and Tibshirani, R. J. (2012),
 Strong rules for discarding predictors in lasso-type problems.
 Journal of the Royal Statistical Society:
-Series B (Statistical Methodology), 74: 245–266.
+Series B (Statistical Methodology), 74: 245-266.
 \url{https://doi.org/10.1111/j.1467-9868.2011.01004.x}.
 
-Zeng, Y., and Breheny, P. (2016). The biglasso Package: A Memory- and
+Zeng, Y., and Breheny, P. (2017). The biglasso Package: A Memory- and
 Computation-Efficient Solver for Lasso Model Fitting with Big Data in R.
 arXiv preprint arXiv:1701.05936. \url{https://arxiv.org/abs/1701.05936}.
+
+Privé, F., Aschard, H., and Blum, M. G.B. (2019). Efficient implementation of
+penalized regression for genetic risk prediction. Genetics, 212: 65-74.
+\url{https://doi.org/10.1534/genetics.119.302019}.
 }
 \seealso{
 \link[glmnet:glmnet]{glmnet} \link[biglasso:biglasso]{biglasso}

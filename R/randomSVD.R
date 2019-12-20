@@ -2,7 +2,8 @@
 
 # Parallel implementation
 svds4.par <- function(X, fun.scaling, ind.row, ind.col, k,
-                      tol, verbose, ncores) {
+                      tol, verbose, ncores,
+                      fun.prod, fun.cprod) {
 
   n <- length(ind.row)
   m <- length(ind.col)
@@ -16,12 +17,10 @@ svds4.par <- function(X, fun.scaling, ind.row, ind.col, k,
 
   cluster_type <- getOption("bigstatsr.cluster.type")
   if (verbose) {
-    cl <- parallel::makeCluster(1 + ncores, type = cluster_type, outfile = "")
+    register_parallel(1 + ncores, type = cluster_type, outfile = "")
   } else {
-    cl <- parallel::makeCluster(1 + ncores, type = cluster_type)
+    register_parallel(1 + ncores, type = cluster_type)
   }
-  doParallel::registerDoParallel(cl)
-  on.exit(parallel::stopCluster(cl), add = TRUE)
 
   res <- foreach(ic = 0:ncores) %dopar% {
 
@@ -66,18 +65,16 @@ svds4.par <- function(X, fun.scaling, ind.row, ind.col, k,
       repeat {
         # Slaves wait for their master to give them orders
         while (calc[ic] == 0) Sys.sleep(TIME)
-        c <-  calc[ic]
+        c <- calc[ic]
         # Slaves do the hard work
         if (c == 1) {
-          # Compute A * x
-          x <- Atx[lo:up] / ms$scale
-          Ax[, ic] <- pMatVec4(X, x, ind.row, ind.col.part) -
-            drop(crossprod(x, ms$center))
+          # Compute A * x (part)
+          Ax[, ic] <- fun.prod(X, Atx[lo:up], ind.row, ind.col.part,
+                               center = ms$center, scale = ms$scale)
         } else if (c == 2) {
-          # Compute At * x
-          x <- Ax[, 1]
-          Atx[lo:up] <- (cpMatVec4(X, x, ind.row, ind.col.part) -
-                           sum(x) * ms$center) / ms$scale
+          # Compute At * x (part)
+          Atx[lo:up] <- fun.cprod(X, Ax[, 1], ind.row, ind.col.part,
+                                  center = ms$center, scale = ms$scale)
         } else if (c == 3) {
           # End
           break
@@ -95,7 +92,7 @@ svds4.par <- function(X, fun.scaling, ind.row, ind.col, k,
   l <- do.call("c", res[-1])
   res <- res[[1]]
   s <- c(TRUE, FALSE)
-  res$center <- unlist(l[s], use.names = FALSE)
+  res$center <- unlist(l[s],  use.names = FALSE)
   res$scale  <- unlist(l[!s], use.names = FALSE)
 
   # Return
@@ -105,7 +102,8 @@ svds4.par <- function(X, fun.scaling, ind.row, ind.col, k,
 ################################################################################
 
 # Single core implementation
-svds4.seq <- function(X, fun.scaling, ind.row, ind.col, k, tol, verbose) {
+svds4.seq <- function(X, fun.scaling, ind.row, ind.col, k, tol, verbose,
+                      fun.prod, fun.cprod) {
 
   n <- length(ind.row)
   m <- length(ind.col)
@@ -118,13 +116,12 @@ svds4.seq <- function(X, fun.scaling, ind.row, ind.col, k, tol, verbose) {
   # A
   A <- function(x, args) {
     printf("%d - computing A * x\n", it <<- it + 1)
-    x <- x / ms$scale
-    pMatVec4(X, x, ind.row, ind.col) - drop(crossprod(x, ms$center))
+    fun.prod(X, x, ind.row, ind.col, center = ms$center, scale = ms$scale)
   }
   # Atrans
   Atrans <- function(x, args) {
     printf("%d - computing At * x\n", it <<- it + 1)
-    (cpMatVec4(X, x, ind.row, ind.col) - sum(x) * ms$center) / ms$scale
+    fun.cprod(X, x, ind.row, ind.col, center = ms$center, scale = ms$scale)
   }
 
   res <- RSpectra::svds(A, k, nu = k, nv = k, opts = list(tol = tol),
@@ -153,16 +150,24 @@ svds4.seq <- function(X, fun.scaling, ind.row, ind.col, k, tol, verbose) {
 #' It proved to be faster than our implementation of the "blanczos" algorithm
 #' in Rokhlin, V., Szlam, A., & Tygert, M. (2010).
 #' A Randomized Algorithm for Principal Component Analysis.
-#' SIAM Journal on Matrix Analysis and Applications, 31(3), 1100–1124.
+#' SIAM Journal on Matrix Analysis and Applications, 31(3), 1100-1124.
 #' \url{https://doi.org/10.1137/080736417}.
 #'
 #' @inheritParams bigstatsr-package
 #' @param k Number of singular vectors/values to compute. Default is `10`.
 #' __This algorithm should be used to compute only a
 #' few singular vectors/values.__
-#' @param tol Precision parameter of [svds][RSpectra::svds].
-#' Default is `1e-4`.
+#' @param tol Precision parameter of [svds][RSpectra::svds]. Default is `1e-4`.
 #' @param verbose Should some progress be printed? Default is `FALSE`.
+#' @param fun.prod Function that takes 6 arguments (in this order):
+#'  - a matrix-like object `X`,
+#'  - a vector `x`,
+#'  - a vector of row indices `ind.row` of `X`,
+#'  - a vector of column indices `ind.col` of `X`,
+#'  - a vector of column centers (corresponding to `ind.col`),
+#'  - a vector of column scales (corresponding to `ind.col`),
+#'  and compute the product of `X` (subsetted and scaled) with `x`.
+#' @param fun.cprod Same as `fun.prod`, but for the *transpose* of `X`.
 #'
 #' @export
 #'
@@ -188,15 +193,19 @@ big_randomSVD <- function(
   k = 10,
   tol = 1e-4,
   verbose = FALSE,
-  ncores = 1
+  ncores = 1,
+  fun.prod = big_prodVec,
+  fun.cprod = big_cprodVec
 ) {
 
-  check_args()
+  check_args(X = "")
 
   if (ncores > 1) {
-    res <- svds4.par(X, fun.scaling, ind.row, ind.col, k, tol, verbose, ncores)
+    res <- svds4.par(X, fun.scaling, ind.row, ind.col, k, tol, verbose, ncores,
+                     fun.prod, fun.cprod)
   } else {
-    res <- svds4.seq(X, fun.scaling, ind.row, ind.col, k, tol, verbose)
+    res <- svds4.seq(X, fun.scaling, ind.row, ind.col, k, tol, verbose,
+                     fun.prod, fun.cprod)
   }
 
   structure(res, class = "big_SVD")

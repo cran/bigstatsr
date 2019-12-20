@@ -28,6 +28,22 @@ for (t in TEST.TYPES) {
       y.row <- rnorm(n)
       expect_equal(big_cprodVec(X, y.row, ind.row, ind.col),
                    drop(crossprod(X[ind.row, ind.col, drop = FALSE], y.row)))
+
+      center <- rnorm(m); scale <- runif(m)
+      expect_equal(big_prodVec(X, y.col, ind.row, ind.col, center = center),
+                   drop(scale(X[ind.row, ind.col, drop = FALSE],
+                              center = center, scale = FALSE) %*% y.col))
+      expect_equal(big_prodVec(X, y.col, ind.row, ind.col,
+                               center = center, scale = scale),
+                   drop(scale(X[ind.row, ind.col, drop = FALSE],
+                              center = center, scale = scale) %*% y.col))
+      expect_equal(big_cprodVec(X, y.row, ind.row, ind.col, center = center),
+                   drop(crossprod(scale(X[ind.row, ind.col, drop = FALSE],
+                                        center = center, scale = FALSE), y.row)))
+      expect_equal(big_cprodVec(X, y.row, ind.row, ind.col,
+                                center = center, scale = scale),
+                   drop(crossprod(scale(X[ind.row, ind.col, drop = FALSE],
+                                        center = center, scale = scale), y.row)))
     })
   })
 
@@ -35,11 +51,9 @@ for (t in TEST.TYPES) {
     ind.row <- sample(N, size = 21)
     ind.col <- sample(M, size = 11)
     y.col <- rnorm(21)
-    expect_error(big_prodVec(X, y.col, ind.row, ind.col),
-                 "Incompatibility between dimensions.")
+    expect_error(big_prodVec(X, y.col, ind.row, ind.col), GET_ERROR_DIM())
     y.row <- rnorm(11)
-    expect_error(big_cprodVec(X, y.row, ind.row, ind.col),
-                 "Incompatibility between dimensions.")
+    expect_error(big_cprodVec(X, y.row, ind.row, ind.col), GET_ERROR_DIM())
   })
 }
 

@@ -1,9 +1,6 @@
 ################################################################################
 
 # Global variables
-ALL.TYPES <- structure(c(1L, 1L, 2L, 4L, 6L, 8L),
-                       names = c("raw", "unsigned char", "unsigned short",
-                                 "integer", "float", "double"))
 globalVariables(c("ic", "mods", "k", "loss_index", "set"))
 
 ################################################################################
@@ -33,72 +30,56 @@ block_size <- function(n, ncores = 1) {
 }
 
 ################################################################################
+#### Splitting ####
 
 CutBySize <- function(m, block.size, nb = ceiling(m / block.size)) {
-
-  if (nb > m) {
-    nb <- m
-  } else if (nb == 0) {  ## block.size = Inf
-    nb <- 1
-  }
-  assert_pos(nb); assert_int(nb)
-  int <- m / nb
-
-  upper <- round(1:nb * int)
-  lower <- c(1, upper[-nb] + 1)
-  size <- c(upper[1], diff(upper))
-
-  cbind(lower, upper, size)
-}
-
-################################################################################
-
-seq2 <- function(lims) {
-  seq(lims[1], lims[2])
-}
-
-################################################################################
-
-getAvailMem <- function(format = TRUE) {
-
-  .Deprecated("memuse::Sys.meminfo()")
-
-  gc()
-
-  if (Sys.info()[["sysname"]] == "Windows") {
-    memfree <- 1024^2 * (utils::memory.limit() - utils::memory.size())
-  } else {
-    # http://stackoverflow.com/a/6457769/6103040
-    memfree <- 1024 * as.numeric(
-      system("awk '/MemFree/ {print $2}' /proc/meminfo", intern = TRUE))
-  }
-
-  `if`(format, format(structure(memfree, class = "object_size"),
-                      units = "auto"), memfree)
+  bigparallelr::split_len(m, nb_split = nb)
 }
 
 ################################################################################
 #### Sequence generation ####
 
-#' Sequence generation
+seq2 <- bigparallelr::seq_range
+
+#' @importFrom bigparallelr rows_along
+#' @export
+bigparallelr::rows_along
+
+#' @importFrom bigparallelr cols_along
+#' @export
+bigparallelr::cols_along
+
+################################################################################
+
+#' Increment an FBM
 #'
-#' Similar to [seq_along], it creates sequences of size `nrow(x)` or `ncol(x)`.
+#' @param X An `FBM` (of type double) to increment.
+#' @param add A matrix of same dimensions as `X`. Or a vector of same size.
+#' @param use_lock Whether to use locks when incrementing. Default is `FALSE`.
+#'   This is useful when incrementing in parallel.
 #'
-#' @param x Any object on which you can call `nrow` and `ncol`.
+#' @return Returns nothing (`NULL`, invisibly).
+#'
+#' @export
 #'
 #' @examples
-#' X <- big_attachExtdata()
-#' dim(X)
-#' str(rows_along(X))
-#' str(cols_along(X))
+#' X <- FBM(10, 10, init = 0)
+#' mat <- matrix(rnorm(100), 10, 10)
 #'
-#' @rdname seq-dim
-#' @keywords internal
-#' @export
-rows_along <- function(x) seq_len(nrow(x))
+#' big_increment(X, mat)
+#' all.equal(X[], mat)
+#'
+#' big_increment(X, mat)
+#' all.equal(X[], 2 * mat)
+#'
+big_increment <- function(X, add, use_lock = FALSE) {
 
-#' @rdname seq-dim
-#' @export
-cols_along <- function(x) seq_len(ncol(x))
+  if (use_lock) {
+    locked <- bigparallelr::lock(X$backingfile)
+    on.exit(bigparallelr::unlock(locked), add = TRUE)
+  }
+
+  if (is.matrix(add)) incr_FBM_mat(X, add) else incr_FBM_vec(X, add)
+}
 
 ################################################################################

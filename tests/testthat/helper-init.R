@@ -7,17 +7,21 @@ Sys.unsetenv("R_TESTS")
 
 library(testthat)
 library(bigstatsr)
+library(bigparallelr)
 
 ################################################################################
 
 opt.save <- options(bigstatsr.downcast.warning = FALSE,
-                    bigstatsr.block.sizeGB = 1e-5)
+                    bigstatsr.block.sizeGB = 1e-5,
+                    bigstatsr.check.parallel.blas = FALSE)
 
 ################################################################################
 
 not_cran <- identical(Sys.getenv("BIGSTATSR_CRAN"), "false")
 
-test_cores <- function() `if`(not_cran, sample(2, size = 1), 1)
+test_cores <- function() {
+  `if`(not_cran && (parallel::detectCores() > 2), sample(2, size = 1), 1)
+}
 
 ################################################################################
 
@@ -49,8 +53,8 @@ set.seed(NULL)
 if (not_cran) {
   # Seeds that won't work (because of bad luck)
   # 3544 -> spLinReg & spLogReg
-  # 6649 -> spLinReg
-  do_not_use <- c(3544, 6649)
+  # 4475, 6649 -> spLinReg
+  do_not_use <- c(3544, 4475, 6649)
   while ((SEED <- round(runif(1, 1, 9999))) %in% do_not_use) NULL
 } else {
   SEED <- 1

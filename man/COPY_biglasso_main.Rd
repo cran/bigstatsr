@@ -4,12 +4,31 @@
 \alias{COPY_biglasso_main}
 \title{Sparse regression path}
 \usage{
-COPY_biglasso_main(X, y.train, ind.train, ind.col, covar.train,
-  family = c("gaussian", "binomial"), alphas = 1, K = 10,
-  ind.sets = NULL, nlambda = 200, lambda.min = if (n > p) 1e-04 else
-  0.001, nlam.min = 50, n.abort = 10, base.train = NULL,
-  pf.X = NULL, pf.covar = NULL, eps = 1e-05, max.iter = 1000,
-  dfmax = 50000, return.all = FALSE, warn = FALSE, ncores = 1)
+COPY_biglasso_main(
+  X,
+  y.train,
+  ind.train,
+  ind.col,
+  covar.train,
+  family = c("gaussian", "binomial"),
+  alphas = 1,
+  K = 10,
+  ind.sets = NULL,
+  nlambda = 200,
+  lambda.min.ratio = if (n > p) 1e-04 else 0.001,
+  nlam.min = 50,
+  n.abort = 10,
+  base.train = NULL,
+  pf.X = NULL,
+  pf.covar = NULL,
+  eps = 1e-05,
+  max.iter = 1000,
+  dfmax = 50000,
+  lambda.min = if (n > p) 1e-04 else 0.001,
+  return.all = FALSE,
+  warn = FALSE,
+  ncores = 1
+)
 }
 \arguments{
 \item{family}{Either "gaussian" (linear) or "binomial" (logistic).}
@@ -31,7 +50,7 @@ or if you want to refine the grid-search over \code{alphas} using the same sets.
 
 \item{nlambda}{The number of lambda values. Default is \code{200}.}
 
-\item{lambda.min}{The smallest value for lambda, \strong{as a fraction of
+\item{lambda.min.ratio}{The smallest value for lambda, \strong{as a fraction of
 lambda.max}. Default is \code{.0001} if the number of observations is larger than
 the number of variables and \code{.001} otherwise.}
 
@@ -42,9 +61,7 @@ set must decrease before stopping. Default is \code{10}.}
 
 \item{base.train}{Vector of base predictions. Model will be learned starting
 from these predictions. This can be useful if you want to previously fit
-a model with large-effect variables that you don't want to penalize.
-\strong{Don't forget to add those predictions when you use \code{predict}
-and make sure you don't use \code{proba = TRUE} when you do so.}}
+a model with large-effect variables that you don't want to penalize.}
 
 \item{pf.X}{A multiplicative factor for the penalty applied to each coefficient.
 If supplied, \code{pf.X} must be a numeric vector of the same length as \code{ind.col}.
@@ -65,9 +82,12 @@ Default value is \code{1e-5}.}
 \code{50e3} because, for large data sets, computational burden may be
 heavy for models with a large number of nonzero coefficients.}
 
+\item{lambda.min}{This parameter has been renamed \code{lambda.min.ratio} and is
+now deprecated.}
+
 \item{return.all}{Deprecated. Now always return all models.}
 
-\item{warn}{Deprecated. Now return the reason of completion as \code{$message}.}
+\item{warn}{Deprecated. Now return the reason of completion as \verb{$message}.}
 }
 \description{
 Fit solution paths for linear or logistic regression models penalized by

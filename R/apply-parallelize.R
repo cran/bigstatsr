@@ -1,30 +1,8 @@
 ################################################################################
 
-#' Recommended number of cores to use
-#'
-#' This is base on the following rule: use only physical cores and if you have
-#' only physical cores, leave one core for the OS/UI.
-#'
-#' @return The recommended number of cores to use.
+#' @importFrom bigparallelr nb_cores
 #' @export
-#'
-#' @examples
-#' nb_cores()
-nb_cores <- function() {
-
-  if (Sys.info()[["sysname"]] == "Windows") {
-    ncores <- parallel::detectCores(logical = FALSE)
-  } else {
-    # https://stackoverflow.com/a/23378780/6103040
-    cmd <- "[ $(uname) = 'Darwin' ] && sysctl -n hw.physicalcpu_max ||
-            lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l"
-    ncores <- as.integer(system(cmd, intern = TRUE))
-  }
-
-  all_cores <- parallel::detectCores(logical = TRUE)
-
-  `if`(ncores < all_cores, ncores, all_cores - 1L)
-}
+bigparallelr::nb_cores
 
 ################################################################################
 
@@ -56,34 +34,25 @@ nb_cores <- function() {
 #'   combined with `do.call(p.combine, .)` if `p.combined` is given.
 #' @export
 #'
+#' @importFrom bigparallelr makeCluster stopCluster registerDoParallel
+#' @importFrom bigparallelr register_parallel
+#'
+#' @seealso [big_apply] [bigparallelr::split_parapply]
+#'
 #' @example examples/example-parallelize.R
-#' @seealso [big_apply]
+#'
 big_parallelize <- function(X, p.FUN,
                             p.combine = NULL,
                             ind = cols_along(X),
                             ncores = nb_cores(),
                             ...) {
 
-  assert_args(p.FUN, "ind")
-  assert_int(ind); assert_pos(ind)
-  assert_cores(ncores)
-
-  if (ncores == 1) {
-    registerDoSEQ()
-  } else {
-    cluster_type <- getOption("bigstatsr.cluster.type")
-    cl <- parallel::makeCluster(ncores, type = cluster_type)
-    doParallel::registerDoParallel(cl)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-  }
-
-  intervals <- CutBySize(length(ind), nb = ncores)
-
-  res <- foreach(ic = rows_along(intervals)) %dopar% {
-    p.FUN(X, ind = ind[seq2(intervals[ic, ])], ...)
-  }
-
-  `if`(is.null(p.combine), res, do.call(p.combine, res))
+  bigparallelr::split_parapply(
+    p.FUN, ind, X, ...,
+    .combine = p.combine,
+    ncores = ncores,
+    opts_cluster = list(type = getOption("bigstatsr.cluster.type"))
+  )
 }
 
 ################################################################################
@@ -130,8 +99,10 @@ big_applySeq <- function(X, a.FUN, block.size, ind, ...) {
 #'
 #' @export
 #'
+#' @seealso [big_parallelize] [bigparallelr::split_parapply]
+#'
 #' @example examples/example-apply.R
-#' @seealso [big_parallelize]
+#'
 big_apply <- function(X, a.FUN,
                       a.combine = NULL,
                       ind = cols_along(X),
@@ -157,19 +128,8 @@ big_apply <- function(X, a.FUN,
 
 ################################################################################
 
-#' Add
-#'
-#' Add multiple arguments
-#'
-#' @param ... Multiple arguments to be added together
-#'
-#' @return ` Reduce('+', list(...))`
+#' @importFrom bigparallelr plus
 #' @export
-#'
-#' @examples
-#' plus(1:3, 4:6, 1:3)
-plus <- function(...) {
-  Reduce('+', list(...))
-}
+bigparallelr::plus
 
 ################################################################################

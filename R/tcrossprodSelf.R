@@ -30,24 +30,21 @@ big_tcrossprodSelf <- function(
   K <- FBM(n, n, init = 0)
   m <- length(ind.col)
 
-  intervals <- CutBySize(m, block.size)
-  nb.block <- nrow(intervals)
-
   means <- numeric(m)
   sds   <- numeric(m)
 
-  for (j in 1:nb.block) {
+  intervals <- CutBySize(m, block.size)
+
+  for (j in rows_along(intervals)) {
     ind <- seq2(intervals[j, ])
     ind.col.ind <- ind.col[ind]
     ms <- fun.scaling(X, ind.row = ind.row, ind.col = ind.col.ind)
     means[ind] <- ms$center
     sds[ind]   <- ms$scale
     tmp <- scaling(X[ind.row, ind.col.ind], ms$center, ms$scale)
-    incrSup2(K, tcrossprod(tmp))
+    big_increment(K, tcrossprod(tmp))
   }
 
-  # Complete the lower part of the symmetric matrix
-  complete2(K)
   structure(K, center = means, scale = sds)
 }
 

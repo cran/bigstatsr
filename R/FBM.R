@@ -1,9 +1,22 @@
 ################################################################################
 
-#' Replace extension 'bk'
+ALL.TYPES <- c(
+  "raw"            = 1L,
+  "unsigned char"  = 1L,
+  "unsigned short" = 2L,
+  "integer"        = 4L,
+  "float"          = 6L,
+  "double"         = 8L
+)
+
+################################################################################
+
+#' Replace extension '.bk'
 #'
-#' @param path String with extension 'bk'.
+#' @param path String with extension '.bk'.
 #' @param replacement Replacement of '.bk'. Default replaces by nothing.
+#' @param stop_if_not_ext If `replacement != ""`, whether to error if
+#'   replacement is not an extension (starting with a '.').
 #'
 #' @return String with extension '.bk' replaced by `replacement`.
 #' @export
@@ -12,10 +25,12 @@
 #' path <- "toto.bk"
 #' sub_bk(path)
 #' sub_bk(path, ".rds")
-sub_bk <- function(path, replacement = "") {
+sub_bk <- function(path, replacement = "", stop_if_not_ext = TRUE) {
   pattern <- "\\.bk$"
   if (!grepl(pattern, path))
     stop2("Path '%s' must have 'bk' extension.", path)
+  if (stop_if_not_ext && nchar(replacement) > 0 && substr(replacement, 1, 1) != ".")
+    stop2("Replacement must be an extension starting with '.' if provided.")
   sub(pattern, replacement, path)
 }
 
@@ -48,6 +63,9 @@ sub_bk <- function(path, replacement = "") {
 #'   - `$bm.desc()`: Get this object as a `filebacked.big.matrix` descriptor.
 #'
 #' @examples
+#' mat <- matrix(1:4, 2)
+#' X_from_mat <- as_FBM(mat)
+#'
 #' X <- FBM(10, 10)
 #' typeof(X)
 #' X[] <- rnorm(length(X))

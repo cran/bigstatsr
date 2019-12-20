@@ -5,6 +5,14 @@ auc_sorted <- function(x, y) {
     .Call(`_bigstatsr_auc_sorted`, x, y)
 }
 
+auc_sorted_tab <- function(x, y, w) {
+    .Call(`_bigstatsr_auc_sorted_tab`, x, y, w)
+}
+
+boot_auc_sorted_tab <- function(x, y, n_boot) {
+    .Call(`_bigstatsr_boot_auc_sorted_tab`, x, y, n_boot)
+}
+
 conv_NA_float <- function(source) {
     .Call(`_bigstatsr_conv_NA_float`, source)
 }
@@ -149,12 +157,16 @@ scaling <- function(source, mean, sd) {
     .Call(`_bigstatsr_scaling`, source, mean, sd)
 }
 
-complete2 <- function(BM) {
-    invisible(.Call(`_bigstatsr_complete2`, BM))
+centering <- function(source, mean) {
+    .Call(`_bigstatsr_centering`, source, mean)
 }
 
-incrSup2 <- function(BM, source) {
-    invisible(.Call(`_bigstatsr_incrSup2`, BM, source))
+incr_FBM_mat <- function(BM, mat) {
+    invisible(.Call(`_bigstatsr_incr_FBM_mat`, BM, mat))
+}
+
+incr_FBM_vec <- function(BM, vec) {
+    invisible(.Call(`_bigstatsr_incr_FBM_vec`, BM, vec))
 }
 
 scaleK <- function(BM, sums, mu, delta, nrow) {

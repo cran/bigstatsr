@@ -154,7 +154,9 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #' \code{alpha = 1} is the lasso penalty and \code{alpha} in between `0`
 #' (`1e-4`) and `1` is the elastic-net penalty. Default is `1`. **You can
 #' pass multiple values, and only one will be used (optimized by grid-search).**
-#' @param lambda.min The smallest value for lambda, **as a fraction of
+#' @param lambda.min This parameter has been renamed `lambda.min.ratio` and is
+#' now deprecated.
+#' @param lambda.min.ratio The smallest value for lambda, **as a fraction of
 #' lambda.max**. Default is `.0001` if the number of observations is larger than
 #' the number of variables and `.001` otherwise.
 #' @param nlambda The number of lambda values. Default is `200`.
@@ -180,8 +182,6 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #' @param base.train Vector of base predictions. Model will be learned starting
 #'   from these predictions. This can be useful if you want to previously fit
 #'   a model with large-effect variables that you don't want to penalize.
-#'   **Don't forget to add those predictions when you use `predict`
-#'   and make sure you don't use `proba = TRUE` when you do so.**
 #' @param pf.X A multiplicative factor for the penalty applied to each coefficient.
 #'   If supplied, `pf.X` must be a numeric vector of the same length as `ind.col`.
 #'   Default is all `1`. The purpose of `pf.X` is to apply differential
@@ -197,7 +197,7 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
                                K = 10,
                                ind.sets = NULL,
                                nlambda = 200,
-                               lambda.min = `if`(n > p, .0001, .001),
+                               lambda.min.ratio = `if`(n > p, .0001, .001),
                                nlam.min = 50,
                                n.abort = 10,
                                base.train = NULL,
@@ -206,15 +206,24 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
                                eps = 1e-5,
                                max.iter = 1000,
                                dfmax = 50e3,
+                               lambda.min = `if`(n > p, .0001, .001),
                                return.all = FALSE,
                                warn = FALSE,
                                ncores = 1) {
 
   if (!missing(warn)) warning2("Parameter 'warn' is deprecated.")
   if (!missing(return.all)) warning2("Parameter 'return.all' is deprecated.")
+  if (!missing(lambda.min)) {
+    lambda.min.ratio <- lambda.min
+    warning2("Parameter 'lambda.min' has been renamed 'lambda.min.ratio'.")
+  }
 
   family <- match.arg(family)
-  dfmax <- min(dfmax, .Machine$integer.max - 10L)
+
+  dfmax    <- min(dfmax,    .Machine$integer.max - 10L)
+  nlam.min <- min(nlam.min, .Machine$integer.max - 10L)
+  n.abort <-  min(n.abort,  .Machine$integer.max - 10L)
+  max.iter <- min(max.iter, .Machine$integer.max - 10L)
 
   n <- length(ind.train)
   if (is.null(covar.train)) covar.train <- matrix(0, n, 0)
@@ -276,14 +285,7 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
 
 
   ## fit models
-  if (ncores == 1) {
-    registerDoSEQ()
-  } else {
-    cluster_type <- getOption("bigstatsr.cluster.type")
-    cl <- parallel::makeCluster(ncores, type = cluster_type)
-    doParallel::registerDoParallel(cl)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-  }
+  register_parallel(ncores, type = getOption("bigstatsr.cluster.type"))
 
   alphas <- sort(alphas)
   cross.res <- foreach(alpha = alphas) %:% foreach(ic = 1:K) %dopar% {
@@ -301,7 +303,7 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
     ## Compute lambdas of the path
     lambda.max <- max(abs(resid / pf.keep)[pf.keep != 0]) / alpha
     lambda <- exp(
-      seq(log(lambda.max), log(lambda.max * lambda.min), length.out = nlambda))
+      seq(log(lambda.max), log(lambda.max * lambda.min.ratio), length.out = nlambda))
 
     res <- COPY_biglasso_part(
       X, y.train = y.train[!in.val],
@@ -326,8 +328,9 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
 
   nb_novar <- sum(!keep)
   if (nb_novar > 0)
-    warning2("%d variable%s with low/no variation %s been removed.", nb_novar,
-             `if`(nb_novar == 1, "", "s"), `if`(nb_novar == 1, "has", "have"))
+    warning2("%d variable%s with low/no variation %s been removed.\n%s", nb_novar,
+             `if`(nb_novar == 1, "", "s"), `if`(nb_novar == 1, "has", "have"),
+             "Access remaining columns with 'attr(<object>, \"ind.col\")'.")
 
   structure(
     cross.res,
@@ -365,13 +368,12 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
 #'     - the vector of scores which maximizes log-likelihood is determined,
 #'     - the vector of coefficients corresponding to the previous vector of
 #'       scores is chosen.
-#' 3. The `K` resulting vectors of coefficients can then be combined into one
-#' vector (see [get_beta]) or you can just combine the predictions
-#' (e.g. using `predict` followed by `rowMeans`).
+#' 3. The `K` resulting vectors of coefficients are then averaged into one final
+#'    vector of coefficients.
 #'
 #' @inheritParams bigstatsr-package
 #' @inheritParams COPY_biglasso_main
-#' @inheritDotParams COPY_biglasso_main lambda.min eps max.iter warn return.all
+#' @inheritDotParams COPY_biglasso_main lambda.min.ratio eps max.iter warn return.all
 #'
 #' @return Return an object of class `big_sp_list` (a list of `length(alphas)`
 #'   x `K`) that has 3 methods `predict`, `summary` and `plot`.
@@ -384,12 +386,16 @@ COPY_biglasso_main <- function(X, y.train, ind.train, ind.col, covar.train,
 #' Simon, N., Taylor, J. and Tibshirani, R. J. (2012),
 #' Strong rules for discarding predictors in lasso-type problems.
 #' Journal of the Royal Statistical Society:
-#' Series B (Statistical Methodology), 74: 245–266.
+#' Series B (Statistical Methodology), 74: 245-266.
 #' \url{https://doi.org/10.1111/j.1467-9868.2011.01004.x}.
 #'
-#' Zeng, Y., and Breheny, P. (2016). The biglasso Package: A Memory- and
+#' Zeng, Y., and Breheny, P. (2017). The biglasso Package: A Memory- and
 #' Computation-Efficient Solver for Lasso Model Fitting with Big Data in R.
 #' arXiv preprint arXiv:1701.05936. \url{https://arxiv.org/abs/1701.05936}.
+#'
+#' Privé, F., Aschard, H., and Blum, M. G.B. (2019). Efficient implementation of
+#' penalized regression for genetic risk prediction. Genetics, 212: 65-74.
+#' \url{https://doi.org/10.1534/genetics.119.302019}.
 #'
 #' @export
 big_spLinReg <- function(X, y.train,
@@ -423,7 +429,7 @@ big_spLinReg <- function(X, y.train,
 #'
 #' @inheritParams bigstatsr-package
 #' @inheritParams COPY_biglasso_main
-#' @inheritDotParams COPY_biglasso_main lambda.min eps max.iter warn return.all
+#' @inheritDotParams COPY_biglasso_main lambda.min.ratio eps max.iter warn return.all
 #'
 #' @inherit big_spLinReg return description details seealso references
 #'

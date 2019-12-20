@@ -18,6 +18,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// auc_sorted_tab
+double auc_sorted_tab(const NumericVector& x, const LogicalVector& y, const IntegerVector& w);
+RcppExport SEXP _bigstatsr_auc_sorted_tab(SEXP xSEXP, SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(auc_sorted_tab(x, y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// boot_auc_sorted_tab
+NumericVector boot_auc_sorted_tab(const NumericVector& x, const LogicalVector& y, int n_boot);
+RcppExport SEXP _bigstatsr_boot_auc_sorted_tab(SEXP xSEXP, SEXP ySEXP, SEXP n_bootSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const LogicalVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type n_boot(n_bootSEXP);
+    rcpp_result_gen = Rcpp::wrap(boot_auc_sorted_tab(x, y, n_boot));
+    return rcpp_result_gen;
+END_RCPP
+}
 // conv_NA_float
 NumericVector& conv_NA_float(NumericVector& source);
 RcppExport SEXP _bigstatsr_conv_NA_float(SEXP sourceSEXP) {
@@ -509,24 +535,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// complete2
-void complete2(Environment BM);
-RcppExport SEXP _bigstatsr_complete2(SEXP BMSEXP) {
+// centering
+NumericMatrix& centering(NumericMatrix& source, const NumericVector& mean);
+RcppExport SEXP _bigstatsr_centering(SEXP sourceSEXP, SEXP meanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix& >::type source(sourceSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type mean(meanSEXP);
+    rcpp_result_gen = Rcpp::wrap(centering(source, mean));
+    return rcpp_result_gen;
+END_RCPP
+}
+// incr_FBM_mat
+void incr_FBM_mat(Environment BM, const NumericMatrix& mat);
+RcppExport SEXP _bigstatsr_incr_FBM_mat(SEXP BMSEXP, SEXP matSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Environment >::type BM(BMSEXP);
-    complete2(BM);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type mat(matSEXP);
+    incr_FBM_mat(BM, mat);
     return R_NilValue;
 END_RCPP
 }
-// incrSup2
-void incrSup2(Environment BM, const NumericMatrix& source);
-RcppExport SEXP _bigstatsr_incrSup2(SEXP BMSEXP, SEXP sourceSEXP) {
+// incr_FBM_vec
+void incr_FBM_vec(Environment BM, const NumericVector& vec);
+RcppExport SEXP _bigstatsr_incr_FBM_vec(SEXP BMSEXP, SEXP vecSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Environment >::type BM(BMSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type source(sourceSEXP);
-    incrSup2(BM, source);
+    Rcpp::traits::input_parameter< const NumericVector& >::type vec(vecSEXP);
+    incr_FBM_vec(BM, vec);
     return R_NilValue;
 END_RCPP
 }
@@ -547,6 +586,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_bigstatsr_auc_sorted", (DL_FUNC) &_bigstatsr_auc_sorted, 2},
+    {"_bigstatsr_auc_sorted_tab", (DL_FUNC) &_bigstatsr_auc_sorted_tab, 3},
+    {"_bigstatsr_boot_auc_sorted_tab", (DL_FUNC) &_bigstatsr_boot_auc_sorted_tab, 3},
     {"_bigstatsr_conv_NA_float", (DL_FUNC) &_bigstatsr_conv_NA_float, 1},
     {"_bigstatsr_extractVec", (DL_FUNC) &_bigstatsr_extractVec, 2},
     {"_bigstatsr_extractMat", (DL_FUNC) &_bigstatsr_extractMat, 3},
@@ -583,8 +624,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bigstatsr_univLinReg5", (DL_FUNC) &_bigstatsr_univLinReg5, 5},
     {"_bigstatsr_IRLS", (DL_FUNC) &_bigstatsr_IRLS, 9},
     {"_bigstatsr_scaling", (DL_FUNC) &_bigstatsr_scaling, 3},
-    {"_bigstatsr_complete2", (DL_FUNC) &_bigstatsr_complete2, 1},
-    {"_bigstatsr_incrSup2", (DL_FUNC) &_bigstatsr_incrSup2, 2},
+    {"_bigstatsr_centering", (DL_FUNC) &_bigstatsr_centering, 2},
+    {"_bigstatsr_incr_FBM_mat", (DL_FUNC) &_bigstatsr_incr_FBM_mat, 2},
+    {"_bigstatsr_incr_FBM_vec", (DL_FUNC) &_bigstatsr_incr_FBM_vec, 2},
     {"_bigstatsr_scaleK", (DL_FUNC) &_bigstatsr_scaleK, 5},
     {NULL, NULL, 0}
 };

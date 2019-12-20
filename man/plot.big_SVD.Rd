@@ -4,9 +4,18 @@
 \alias{plot.big_SVD}
 \title{Plot method}
 \usage{
-\method{plot}{big_SVD}(x, type = c("screeplot", "scores", "loadings"),
-  nval = length(x$d), scores = c(1, 2), loadings = 1, cols = 2,
-  coeff = 1, viridis = TRUE, ...)
+\method{plot}{big_SVD}(
+  x,
+  type = c("screeplot", "scores", "loadings"),
+  nval = length(x$d),
+  scores = c(1, 2),
+  loadings = 1,
+  ncol = NULL,
+  coeff = 1,
+  viridis = TRUE,
+  cols = 2,
+  ...
+)
 }
 \arguments{
 \item{x}{An object of class \code{big_SVD}.}
@@ -21,17 +30,19 @@
 \item{nval}{Number of singular values to plot. Default plots all computed.}
 
 \item{scores}{Vector of indices of the two PCs to plot. Default plots the
-first 2 PCs.}
+first two PCs. If providing more than two, it produces many plots.}
 
 \item{loadings}{Indices of PC loadings to plot. Default plots the
 first vector of loadings.}
 
-\item{cols}{If multiple vector of loadings are to be plotted, this defines
+\item{ncol}{If multiple vector of loadings are to be plotted, this defines
 the number of columns of the resulting multiplot.}
 
 \item{coeff}{Relative size of text. Default is \code{1}.}
 
 \item{viridis}{Deprecated argument.}
+
+\item{cols}{Deprecated. Use \code{ncol} instead.}
 
 \item{...}{Not used.}
 }
@@ -57,6 +68,7 @@ plot(svd, coeff = 1.5) # larger font for papers
 # scores plot
 plot(svd, type = "scores") # first 2 PCs
 plot(svd, type = "scores", scores = c(1, 3))
+plot(svd, type = "scores", scores = 1:4, ncol = 2, coeff = 0.7)
 ## add color (recall that this return a `ggplot2` object)
 class(obj <- plot(svd, type = "scores"))
 pop <- rep(c("POP1", "POP2", "POP3"), c(143, 167, 207))
@@ -70,7 +82,10 @@ obj3 + ggtitle("Yet another title") + xlab("with an other 'x' label")
 # loadings
 plot(svd, type = "loadings", loadings = 2)
 ## all loadings
-plot(svd, type = "loadings", loadings = 1:10, coeff = 0.5)
+plot(svd, type = "loadings", loadings = 1:2, coeff = 0.7, ncol = 1)
+
+# Percentage of variance explained by the PCs
+# See https://github.com/privefl/bigstatsr/issues/83
 
 # dynamic plots, require the package **plotly**
 \dontrun{plotly::ggplotly(obj3)}

@@ -23,7 +23,15 @@ const char* const ERROR_REPORT =
 /******************************************************************************/
 
 inline void myassert(bool cond, const char *msg) {
-  if (!cond) throw Rcpp::exception(msg);
+  if (!cond) Rcpp::stop(msg);
+}
+
+inline void myassert_bounds(std::size_t ind, std::size_t lim) {
+  if (!(ind < lim)) Rcpp::stop("Tested %s < %s. %s", ind, lim, ERROR_BOUNDS);
+}
+
+inline void myassert_size(std::size_t n1, std::size_t n2) {
+  if (n1 != n2) Rcpp::stop("Tested %s == %s. %s", n1, n2, ERROR_DIM);
 }
 
 /******************************************************************************/

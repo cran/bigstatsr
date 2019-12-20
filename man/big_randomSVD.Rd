@@ -4,9 +4,18 @@
 \alias{big_randomSVD}
 \title{Randomized partial SVD}
 \usage{
-big_randomSVD(X, fun.scaling = big_scale(center = FALSE, scale = FALSE),
-  ind.row = rows_along(X), ind.col = cols_along(X), k = 10,
-  tol = 1e-04, verbose = FALSE, ncores = 1)
+big_randomSVD(
+  X,
+  fun.scaling = big_scale(center = FALSE, scale = FALSE),
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  k = 10,
+  tol = 1e-04,
+  verbose = FALSE,
+  ncores = 1,
+  fun.prod = big_prodVec,
+  fun.cprod = big_cprodVec
+)
 }
 \arguments{
 \item{X}{A \link[=FBM-class]{FBM}.}
@@ -26,13 +35,25 @@ If not specified, all columns are used. \strong{Don't use negative indices.}}
 \strong{This algorithm should be used to compute only a
 few singular vectors/values.}}
 
-\item{tol}{Precision parameter of \link[RSpectra:svds]{svds}.
-Default is \code{1e-4}.}
+\item{tol}{Precision parameter of \link[RSpectra:svds]{svds}. Default is \code{1e-4}.}
 
 \item{verbose}{Should some progress be printed? Default is \code{FALSE}.}
 
 \item{ncores}{Number of cores used. Default doesn't use parallelism.
 You may use \link{nb_cores}.}
+
+\item{fun.prod}{Function that takes 6 arguments (in this order):
+\itemize{
+\item a matrix-like object \code{X},
+\item a vector \code{x},
+\item a vector of row indices \code{ind.row} of \code{X},
+\item a vector of column indices \code{ind.col} of \code{X},
+\item a vector of column centers (corresponding to \code{ind.col}),
+\item a vector of column scales (corresponding to \code{ind.col}),
+and compute the product of \code{X} (subsetted and scaled) with \code{x}.
+}}
+
+\item{fun.cprod}{Same as \code{fun.prod}, but for the \emph{transpose} of \code{X}.}
 }
 \value{
 A named list (an S3 class "big_SVD") of
@@ -64,7 +85,7 @@ bioRxiv: \url{https://doi.org/10.1101/094714}.
 It proved to be faster than our implementation of the "blanczos" algorithm
 in Rokhlin, V., Szlam, A., & Tygert, M. (2010).
 A Randomized Algorithm for Principal Component Analysis.
-SIAM Journal on Matrix Analysis and Applications, 31(3), 1100–1124.
+SIAM Journal on Matrix Analysis and Applications, 31(3), 1100-1124.
 \url{https://doi.org/10.1137/080736417}.
 }
 \examples{

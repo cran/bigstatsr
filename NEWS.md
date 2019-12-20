@@ -1,3 +1,39 @@
+## bigstatsr 1.0.0
+
+- Move some code to new packages {bigassertr} and {bigparallelr}.
+
+- `big_randomSVD()` gains arguments related to matrix-vector multiplication.
+
+- `assert_noNA()` is faster.
+
+## bigstatsr 0.9.10
+
+- Add `big_increment()`.
+
+## bigstatsr 0.9.9
+
+In `plot.big_SVD()`,
+
+  - Can now plot many PCA scores (more than two) at once.
+  
+  - Use `coord_fixed()` when plotting PCA scores because it is good practice.
+  
+  - Use log-scale in scree plot to better see small differences in singular values.
+  
+  - Reexport `cowplot::plot_grid()` to merge multiple ggplots.
+
+## bigstatsr 0.9.6
+
+- `AUCBoot()` is now 6-7 times faster.
+
+## bigstatsr 0.9.5
+
+- Add parameters `center` and `scale` to products.
+
+## bigstatsr 0.9.3
+
+- Fix a bug in `big_univLogReg()` for variables with no variation. IRLS was not converging, so `glm()` was used instead. The problem is that `glm()` drops dimensions causing singularities so that Z-score of the first covariate (or intercept) was used instead of a missing value.
+
 ## bigstatsr 0.9.0
 
 - Use *mio* instead of *boost* for memory-mapping.
