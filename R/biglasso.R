@@ -15,13 +15,13 @@ null_pred <- function(var0, y, base, family) {
 summaries <- function(X, y_diff.train, ind.train, ind.col, ind.sets, K,
                       covar.train = matrix(0, length(ind.train), 0)) {
 
-  summ <- bigsummaries(X, ind.train, ind.col, covar.train, y_diff.train,
-                       ind.sets, K)
+  all_sums <-
+    bigsummaries(X, ind.train, ind.col, covar.train, y_diff.train, ind.sets, K)
 
-  all <- colSums(summ)
-  SUM_X  <- sweep(-matrix(summ[, , 1], K), 2, all[, 1], '+')
-  SUM_XX <- sweep(-matrix(summ[, , 2], K), 2, all[, 2], '+')
-  SUM_XY <- sweep(-matrix(summ[, , 3], K), 2, all[, 3], '+')
+  SUM_X  <- sweep(-all_sums$sumX,  2, colSums(all_sums$sumX),  '+')
+  SUM_XX <- sweep(-all_sums$sumXX, 2, colSums(all_sums$sumXX), '+')
+  SUM_XY <- sweep(-all_sums$sumXY, 2, colSums(all_sums$sumXY), '+')
+
   SUM_Y <- tapply(seq_along(ind.sets), factor(ind.sets, levels = 1:K),
                   function(ind) sum(y_diff.train[-ind]))
 
@@ -189,6 +189,8 @@ COPY_biglasso_part <- function(X, y.train, ind.train, ind.col, covar.train,
 #'   penalization if some coefficients are thought to be more likely than others
 #'   to be in the model. Setting SOME to 0 allows to have unpenalized coefficients.
 #' @param pf.covar Same as `pf.X`, but for `covar.train`.
+#'   You might want to set some to 0 as variables with large effects can mask
+#'   small effects in penalized regression.
 #'
 #' @keywords internal
 #'

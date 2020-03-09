@@ -3,8 +3,13 @@
 
 /******************************************************************************/
 
-#include <bigstatsr/utils.h>
+#ifndef STRICT_R_HEADERS
+#define STRICT_R_HEADERS
+#endif
+
+#include <mio/mmap.hpp>
 #include <system_error> // for std::error_code
+#include <bigstatsr/utils.h>
 
 using std::size_t;
 

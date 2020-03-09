@@ -16,7 +16,7 @@ big_tcrossprodSelf(
 \S4method{tcrossprod}{FBM,missing}(x, y)
 }
 \arguments{
-\item{X}{A \link[=FBM-class]{FBM}.}
+\item{X}{An object of class \link[=FBM-class]{FBM}.}
 
 \item{fun.scaling}{A function that returns a named list of
 \code{mean} and \code{sd} for every column, to scale each of their elements
@@ -49,10 +49,12 @@ after applying a particular scaling to it.
 }
 \section{Matrix parallelization}{
 
-Large matrix computations (crossprods) are made block-wise and won't
-be parallelized in order to not have to reduce the size of these blocks.
+Large matrix computations are made block-wise and won't be parallelized
+in order to not have to reduce the size of these blocks.
 Instead, you may use \href{https://mran.microsoft.com/open/}{Microsoft R Open}
-in order to accelerate these block matrix computations.
+or OpenBLAS in order to accelerate these block matrix computations.
+You can also control the number of cores used with
+\code{bigparallelr::set_blas_ncores()}.
 }
 
 \examples{

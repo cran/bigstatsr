@@ -15,7 +15,7 @@ big_apply(
 )
 }
 \arguments{
-\item{X}{A \link[=FBM-class]{FBM}.}
+\item{X}{An object of class \link[=FBM-class]{FBM}.}
 
 \item{a.FUN}{The function to be applied to each subset matrix.
 It must take a \link[=FBM-class]{Filebacked Big Matrix} as first argument and
@@ -72,16 +72,6 @@ str(rowsums <- big_apply(X, a.FUN = function(X, ind) rowSums(X[ind, ]),
 # because matrices are stored by column.
 str(rowsums2 <- big_apply(X, a.FUN = function(X, ind) rowSums(X[, ind]),
                           a.combine = 'plus'))
-
-## Every extra parameter to `a.FUN` should be passed to `big_apply`
-# get the crossproduct between X and a matrix A
-# note that we don't explicitly pass `ind.col` to `a.FUN`
-body(big_cprodMat)
-
-# get the product between X and a matrix B
-# here, we must explicitly pass `ind.col` to `a.FUN`
-# because the right matrix also needs to be subsetted.
-body(big_prodMat)
 }
 \seealso{
 \link{big_parallelize} \link[bigparallelr:split_parapply]{bigparallelr::split_parapply}

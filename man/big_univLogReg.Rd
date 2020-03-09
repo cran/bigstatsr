@@ -16,7 +16,7 @@ big_univLogReg(
 )
 }
 \arguments{
-\item{X}{A \link[=FBM-class]{FBM}.}
+\item{X}{An object of class \link[=FBM-class]{FBM}.}
 
 \item{y01.train}{Vector of responses, corresponding to \code{ind.train}.
 \strong{Must be only 0s and 1s.}}
@@ -30,7 +30,8 @@ If not specified, all columns are used. \strong{Don't use negative indices.}}
 
 \item{covar.train}{Matrix of covariables to be added in each model to correct
 for confounders (e.g. the scores of PCA), corresponding to \code{ind.train}.
-Default is \code{NULL} and corresponds to only adding an intercept to each model.}
+Default is \code{NULL} and corresponds to only adding an intercept to each model.
+You can use \code{\link[=covar_from_df]{covar_from_df()}} to convert from a data frame.}
 
 \item{tol}{Relative tolerance to assess convergence of the coefficient.
 Default is \code{1e-8}.}

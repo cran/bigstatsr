@@ -14,7 +14,7 @@ big_SVD(
 )
 }
 \arguments{
-\item{X}{A \link[=FBM-class]{FBM}.}
+\item{X}{An object of class \link[=FBM-class]{FBM}.}
 
 \item{fun.scaling}{A function that returns a named list of
 \code{mean} and \code{sd} for every column, to scale each of their elements
@@ -63,6 +63,16 @@ To get \eqn{X = U \cdot D \cdot V^T},
 \item if both dimensions are large, use \link{big_randomSVD} instead.
 }
 }
+\section{Matrix parallelization}{
+
+Large matrix computations are made block-wise and won't be parallelized
+in order to not have to reduce the size of these blocks.
+Instead, you may use \href{https://mran.microsoft.com/open/}{Microsoft R Open}
+or OpenBLAS in order to accelerate these block matrix computations.
+You can also control the number of cores used with
+\code{bigparallelr::set_blas_ncores()}.
+}
+
 \examples{
 set.seed(1)
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/FBM-copy.R
 \name{big_copy}
 \alias{big_copy}
-\title{Copy a Filebacked Big Matrix}
+\title{Copy as a Filebacked Big Matrix}
 \usage{
 big_copy(
   X,
@@ -46,10 +46,11 @@ Default uses \link{block_size}.}
 \item{is_read_only}{Whether the FBM is read-only? Default is \code{FALSE}.}
 }
 \value{
-A copy of the \link[=FBM-class]{FBM}.
+A copy of \code{X} as a new \link[=FBM-class]{FBM} object.
 }
 \description{
-Copy a Filebacked Big Matrix with possible subsetting.
+Deep copy of a Filebacked Big Matrix with possible subsetting.
+This should also work for any matrix-like object.
 }
 \examples{
 X <- FBM(10, 10, init = 1:100)
@@ -58,7 +59,7 @@ X2 <- big_copy(X, ind.row = 1:5)
 X2[]
 
 mat <- matrix(101:200, 10)
-X3 <- big_copy(mat, type = "double")
+X3 <- big_copy(mat, type = "double")  # as_FBM() would be faster here
 X3[]
 
 X.code <- big_attachExtdata()

@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{Object of class \code{big_sp}.}
 
-\item{X}{A \link[=FBM-class]{FBM}.}
+\item{X}{An object of class \link[=FBM-class]{FBM}.}
 
 \item{ind.row}{An optional vector of the row indices that are used.
 If not specified, all rows are used. \strong{Don't use negative indices.}}
@@ -19,7 +19,8 @@ If not specified, all columns are used. \strong{Don't use negative indices.}}
 
 \item{covar.row}{Matrix of covariables to be added in each model to correct
 for confounders (e.g. the scores of PCA), corresponding to \code{ind.row}.
-Default is \code{NULL} and corresponds to only adding an intercept to each model.}
+Default is \code{NULL} and corresponds to only adding an intercept to each model.
+You can use \code{\link[=covar_from_df]{covar_from_df()}} to convert from a data frame.}
 
 \item{...}{Not used.}
 }

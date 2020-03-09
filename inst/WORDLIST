@@ -65,6 +65,7 @@ multiplot
 nb
 newcommand
 nrow
+OpenBLAS
 parApply
 parallelization
 parallelize
@@ -77,6 +78,7 @@ PSOCK
 Qiu
 randomSVD
 Rcpp
+RcppArmadillo
 rds
 rdsfile
 Recogn

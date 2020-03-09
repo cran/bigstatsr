@@ -26,7 +26,7 @@ big_spLinReg(
 )
 }
 \arguments{
-\item{X}{A \link[=FBM-class]{FBM}.}
+\item{X}{An object of class \link[=FBM-class]{FBM}.}
 
 \item{y.train}{Vector of responses, corresponding to \code{ind.train}.}
 
@@ -39,7 +39,8 @@ If not specified, all columns are used. \strong{Don't use negative indices.}}
 
 \item{covar.train}{Matrix of covariables to be added in each model to correct
 for confounders (e.g. the scores of PCA), corresponding to \code{ind.train}.
-Default is \code{NULL} and corresponds to only adding an intercept to each model.}
+Default is \code{NULL} and corresponds to only adding an intercept to each model.
+You can use \code{\link[=covar_from_df]{covar_from_df()}} to convert from a data frame.}
 
 \item{base.train}{Vector of base predictions. Model will be learned starting
 from these predictions. This can be useful if you want to previously fit
@@ -51,7 +52,9 @@ Default is all \code{1}. The purpose of \code{pf.X} is to apply differential
 penalization if some coefficients are thought to be more likely than others
 to be in the model. Setting SOME to 0 allows to have unpenalized coefficients.}
 
-\item{pf.covar}{Same as \code{pf.X}, but for \code{covar.train}.}
+\item{pf.covar}{Same as \code{pf.X}, but for \code{covar.train}.
+You might want to set some to 0 as variables with large effects can mask
+small effects in penalized regression.}
 
 \item{alphas}{The elastic-net mixing parameter that controls the relative
 contribution from the lasso (l1) and the ridge (l2) penalty. The penalty is
