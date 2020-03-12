@@ -1,4 +1,4 @@
-816b54fb3f4680d1c0df8945979a030b *DESCRIPTION
+31d11887809193af7880ea6247e3486f *DESCRIPTION
 3fd1fe9729536abd34e8ecde9e9ee8a4 *NAMESPACE
 fcede9bc30114905c77b72506c0eaf20 *NEWS.md
 7910e69a42f9ea3596392e8f77797a7c *R/AUC.R
@@ -66,12 +66,12 @@ cfe4abe3ea091b0855056dd4474dfa6a *man/big_copy.Rd
 be6455d0e9bc7d2bdeba710581fb49be *man/big_cor.Rd
 cbabf2c4059fca7b4d6c38735b8ca478 *man/big_counts.Rd
 a14b538386167e465d8c997e59d70654 *man/big_cprodMat.Rd
-cff335f427419146c5b61361452fdce2 *man/big_cprodVec.Rd
+1bd3705d3f289efe14b34bf93b7e3642 *man/big_cprodVec.Rd
 8fa19720eaa4a51a0111f9a177da53e0 *man/big_crossprodSelf.Rd
 cbf95bd52d2fc71e2dddb112bdabad65 *man/big_increment.Rd
 8ab0ebf647a55c6b966e3fe870a3916b *man/big_parallelize.Rd
 9477200ad4217c3e9cd1faed1da8de4a *man/big_prodMat.Rd
-46dfa1d50a988589f2820f81c74325f1 *man/big_prodVec.Rd
+6687ee2d5ed45315e9ecad94307cc012 *man/big_prodVec.Rd
 de745f8332c8d800d900ef003bd6cc67 *man/big_randomSVD.Rd
 8c78ebd965790cf73c3cef18976f2534 *man/big_read.Rd
 73b28c827d6b3fc7e0faed9f6e96fd33 *man/big_scale.Rd
@@ -145,8 +145,8 @@ ee16adbff1755dd86e6ec823bb090935 *tests/testthat/test-crossprodSelf.R
 6150f5255687f549e7f4c457dcf2a585 *tests/testthat/test-prodVec.R
 eb0b07d61e072839db548443d15c582f *tests/testthat/test-randomSVD.R
 da645796232f9b629f8192b6724cc1dc *tests/testthat/test-read.R
-c3d675280c99058a25528768a5f65bb7 *tests/testthat/test-spLinReg.R
-66dd717aeef2e7914068e71a776a8de4 *tests/testthat/test-spLogReg.R
+ae05dba2a084a90dccac78110cdcdc98 *tests/testthat/test-spLinReg.R
+dc96333c2f01e400bfb2f830fd5b90dc *tests/testthat/test-spLogReg.R
 079934fae3383b867b00308f535319d7 *tests/testthat/test-tcrossprodSelf.R
 20b0e35aed331442e1f5166bbd4492a8 *tests/testthat/test-transpose.R
 1b47c643badc288f1c9d3db1a71afa7d *tests/testthat/test-univLinReg.R
