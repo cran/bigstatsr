@@ -32,8 +32,7 @@ If not specified, all rows are used. \strong{Don't use negative indices.}}
 If not specified, all columns are used. \strong{Don't use negative indices.}}
 
 \item{k}{Number of singular vectors/values to compute. Default is \code{10}.
-\strong{This algorithm should be used to compute only a
-few singular vectors/values.}}
+\strong{This algorithm should be used to compute only a few singular vectors/values.}}
 
 \item{tol}{Precision parameter of \link[RSpectra:svds]{svds}. Default is \code{1e-4}.}
 
@@ -80,13 +79,13 @@ memory-efficient. Thus, it can be used on very large big.matrices.
 The idea of using this Implicitly Restarted Arnoldi Method algorithm
 comes from G. Abraham, Y. Qiu, and M. Inouye,
 FlashPCA2: principal component analysis of biobank-scale genotype datasets,
-bioRxiv: \url{https://doi.org/10.1101/094714}.
+bioRxiv: \doi{10.1101/094714}.
 \cr
 It proved to be faster than our implementation of the "blanczos" algorithm
 in Rokhlin, V., Szlam, A., & Tygert, M. (2010).
 A Randomized Algorithm for Principal Component Analysis.
 SIAM Journal on Matrix Analysis and Applications, 31(3), 1100-1124.
-\url{https://doi.org/10.1137/080736417}.
+\doi{10.1137/080736417}.
 }
 \examples{
 set.seed(1)
