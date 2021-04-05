@@ -1,4 +1,4 @@
-5c04b25aef0791590941abcf5f5288ea *DESCRIPTION
+930eb16b4d92a763a1c297ebc265e7f5 *DESCRIPTION
 0ada579acc2be115368f540d7a9ecc94 *NAMESPACE
 257b24f44e981a6a563bde8c62b96ec3 *NEWS.md
 f19b887aa4ac2a2162dd0df27ebdbcf7 *R/AUC.R
@@ -27,11 +27,11 @@ ae2d1988e6c58082a475c727a6c9292d *R/tcrossprodSelf.R
 c2d49b94d541bd32d3f8a98ab86dd44f *R/transpose.R
 6d082b1dbc8dd4fad5cb1a2a8154c975 *R/univLinReg.R
 b3387ecc4aadf15eccb538190352cd2d *R/univLogReg.R
-cf88a1cdd44fa49f1c86282a217e2ff5 *R/utils-assert.R
+2bdcb813428bc7ae02bb579c2880e2ec *R/utils-assert.R
 f2265c74965aaec7e230fd0a87e07932 *R/utils.R
 f1ede53013791738fc332a1069c3ecaa *R/zzz.R
 64ddb794c9df409a5104b0df765f2b8d *README.md
-0cb38bf63c4479f77c63508ca81d153c *build/partial.rdb
+ad77be5b4349824551001ac9dcc7339d *build/partial.rdb
 f92f5e355c67bc4e48659d7a5911f040 *inst/CITATION
 7ec2ea6c9da75267dcf33a0830b83622 *inst/WORDLIST
 1e418142d6df1fa8882e2d27fde617bf *inst/extdata/example.bk
