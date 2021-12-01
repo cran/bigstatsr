@@ -1,7 +1,7 @@
 ################################################################################
 
-is_all_0ish <- function(x) {
-  isTRUE(all.equal(x, rep(0, length(x)), check.attributes = FALSE))
+is_singular <- function(m) {
+  !is.matrix(try(solve(crossprod(m)), silent = TRUE))
 }
 
 ################################################################################
@@ -27,14 +27,25 @@ pcor <- function(x, y, z, alpha = 0.05) {
 
   if (is.null(z)) z <- matrix(0, length(x), 0)
 
-  df <- cbind.data.frame(x, y, z)
-  m <- stats::model.matrix(~ ., data = df)
+  assert_lengths(x, y, rows_along(z))
+
+  m <- stats::model.matrix(~ ., data = cbind.data.frame(x, y, z))
+  if (nrow(m) < 2) return(rep(NA_real_, 3))
+
+  to_keep <- apply(m, 2, function(x) any(x != x[1]))
+  to_keep[1:3] <- TRUE
+  if (any(!to_keep)) {
+    warning2("Discarding some covariates in `z` with no variation..")
+    m <- m[, to_keep]
+  }
+
+  if (is_singular(m[, -2]) | is_singular(m[, -3]))
+    return(rep(NA_real_, 3))
+
   mod1 <- stats::lm.fit(x = m[, -(2:3), drop = FALSE], y = m[, 2])
   mod2 <- stats::lm.fit(x = m[, -(2:3), drop = FALSE], y = m[, 3])
 
-  if (is_all_0ish(mod1$residuals) || is_all_0ish(mod2$residuals)) {
-    rep(0, 3)
-  } else if (mod1$df.residual < 3 || mod2$df.residual < 3) {
+  if (mod1$df.residual < 3 || mod2$df.residual < 3) {
     rep(NA_real_, 3)
   } else {
     r <- stats::cor(mod1$residuals, mod2$residuals)
