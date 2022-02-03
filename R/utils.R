@@ -1,7 +1,8 @@
 ################################################################################
 
 # Global variables
-globalVariables(c("ic", "mods", "k", "loss_index", "set", "pow_sc", "pow_adapt"))
+globalVariables(c("ic", "mods", "k", "loss_index", "set", "pow_sc", "pow_adapt",
+                  "_DF_", "_IND_COL_"))
 
 ################################################################################
 
@@ -110,6 +111,51 @@ covar_from_df <- function(df) {
 
   # https://stackoverflow.com/a/49071411/6103040
   stats::model.matrix.lm(~ ., data = df, na.action = "na.pass")[, -1, drop = FALSE]
+}
+
+################################################################################
+
+#' Scaling function creator
+#'
+#' Convenience function to create a function to be used as parameter `fun.scaling`
+#' when you want to use your own precomputed center and scale.
+#'
+#' @param center.col Vector of centers corresponding to `ind.col`.
+#' @param scale.col Vector of scales corresponding to `ind.col`.
+#' @param ind.col Column indices for which these are provided.
+#'
+#' @return A function to be used as parameter `fun.scaling`.
+#' @export
+#'
+#' @examples
+#' fun.scaling <- as_scaling_fun(1:6, 2:7)
+#' fun.scaling(NULL, NULL, 1:3)  # first two parameters X and ind.row are not used here
+#' fun.scaling2 <- as_scaling_fun(1:6, 2:7, ind.col = 6:1)
+#' fun.scaling2(NULL, NULL, 1:3)
+#'
+#'
+#' X <- big_attachExtdata()
+#' sc <- big_scale()(X)
+#' fun <- as_scaling_fun(center = sc$center, scale = sc$scale)
+#' obj.svd <- big_randomSVD(X, fun.scaling = fun)
+#' obj.svd2 <- big_randomSVD(X, fun.scaling = big_scale())
+#' all.equal(obj.svd, obj.svd2)
+#'
+as_scaling_fun <- function(center.col, scale.col, ind.col = seq_along(center.col)) {
+
+  assert_lengths(center.col, scale.col, ind.col)
+
+  e <- new.env(parent = baseenv())
+  assign("_DF_", data.frame(center = center.col, scale = scale.col), envir = e)
+  assign("_IND_COL_", ind.col, envir = e)
+
+  f <- function(X, ind.row, ind.col) {
+    ind <- match(ind.col, `_IND_COL_`)
+    `_DF_`[ind, ]
+  }
+  environment(f) <- e
+
+  f
 }
 
 ################################################################################
