@@ -1,3 +1,23 @@
+## bigstatsr 1.5.11
+
+- Make sure not to use two levels of parallelism in `big_univLogReg()` (#137).
+
+## bigstatsr 1.5.10
+
+- Check out-of-bounds `ind.col` in `big_prodMat()` (#154).
+
+## bigstatsr 1.5.9
+
+- Add global option `FBM.dir` (that defaults to `tempdir()` as before). This can be used to change the default directory used to create FBMs when calling either `FBM()`, `FBM.code256()`, `as_FBM()`, `big_copy()`, or `big_transpose()`. Note that, if not using the temporary directory anymore, you must clean up the files you do not want to keep.
+
+## bigstatsr 1.5.8
+
+- Enable `ARMA_64BIT_WORD`.
+
+## bigstatsr 1.5.7
+
+- New strategy for `$add_columns()`.
+
 ## bigstatsr 1.5.6
 
 - Add convenience function `as_scaling_fun()` to create your own `fun.scaling` parameters.

@@ -52,11 +52,7 @@ You can use \code{\link[=covar_from_df]{covar_from_df()}} to convert from a data
 \item{scale}{Vector of same length of \code{ind.col} to divide from columns of \code{X}.}
 }
 \description{
-Easy-to-use, efficient, flexible and scalable statistical tools.
-  Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping.
-  It provides for instance matrix operations, Principal Component Analysis,
-  sparse linear supervised models, utility functions and more
-  <doi:10.1093/bioinformatics/bty185>.
+Easy-to-use, efficient, flexible and scalable statistical tools. Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping. It provides for instance matrix operations, Principal Component Analysis, sparse linear supervised models, utility functions and more <doi:10.1093/bioinformatics/bty185>.
 }
 \section{Matrix parallelization}{
 
@@ -81,8 +77,9 @@ Useful links:
 
 Other contributors:
 \itemize{
-  \item Michael Blum \email{michael.blum@univ-grenoble-alpes.fr} [thesis advisor]
+  \item Michael Blum [thesis advisor]
   \item Hugues Aschard \email{hugues.aschard@pasteur.fr} [thesis advisor]
 }
 
 }
+\keyword{internal}
