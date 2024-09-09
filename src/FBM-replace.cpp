@@ -19,6 +19,10 @@ inline double int2dbl(int x) {
   return (x == NA_INTEGER) ? NA_REAL : x;
 }
 
+inline int dbl2int(double x) {
+  return (x != x || x == R_PosInf) ? NA_INTEGER : x;
+}
+
 template<typename T_IN, typename T_OUT>
 inline T_OUT identity(T_IN x) {
   return x;
@@ -79,7 +83,7 @@ case 4:                                                                        \
   case INTSXP: REPLACE(int, as<IntegerVector>(VEC))                            \
   case REALSXP: {                                                              \
     NumericVector vec2 = check_conv_dbl2int(VEC);                              \
-    REPLACE(int, vec2)                                                         \
+    REPLACE_CONV(int, vec2, dbl2int)                                           \
   }                                                                            \
   default: stop("R type '%s' is not supported.", Rf_type2char(r_type));        \
   }                                                                            \
@@ -88,7 +92,7 @@ case 6:                                                                        \
   case RAWSXP: REPLACE(float, as<RawVector>(VEC))                              \
   case LGLSXP: REPLACE_CONV(float, as<LogicalVector>(VEC), int2flt)            \
   case INTSXP: {                                                               \
-    IntegerVector vec2 = check_conv<INTSXP,  float>(VEC);                      \
+    IntegerVector vec2 = check_conv<INTSXP, float>(VEC);                       \
     REPLACE_CONV(float, vec2, int2flt)                                         \
   }                                                                            \
   case REALSXP: {                                                              \
@@ -118,11 +122,7 @@ bool do_warn_downcast() {
   Function get_option = base["getOption"];
   SEXP warn = get_option("bigstatsr.downcast.warning");
 
-  if (TYPEOF(warn) == LGLSXP) {
-    return as<LogicalVector>(warn)[0];
-  } else {
-    return true;  // but this shoud not happen
-  }
+  return Rf_isNull(warn) ? true : Rf_asLogical(warn);
 }
 
 /******************************************************************************/
@@ -180,10 +180,9 @@ NumericVector check_conv_dbl2int(NumericVector nv) {
   if (do_warn_downcast()) {
 
     size_t n = nv.size();
-    int test;
 
     for (size_t i = 0; i < n; i++) {
-      test = nv[i];
+      int test = dbl2int(nv[i]);
       if (test != nv[i] && !R_IsNA(nv[i])) {
         warning("%s (%s -> %s)\n  %s",
                 "At least one value changed", nv[i], test,
@@ -201,10 +200,9 @@ NumericVector check_conv_dbl2flt(NumericVector nv) {
   if (do_warn_downcast()) {
 
     size_t n = nv.size();
-    float test;
 
     for (size_t i = 0; i < n; i++) {
-      test = nv[i];
+      float test = nv[i];
       if (test != nv[i] && !std::isnan(test)) {
         warning("%s (%s -> %s)\n  %s",
                 "At least one value changed", nv[i], test,

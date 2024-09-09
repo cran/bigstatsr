@@ -46,9 +46,9 @@ It is used in \href{https://goo.gl/pHCCmo}{package \strong{bigsnpr}}.
 \item{init}{Either a single value (e.g. \code{0}) or as many value as the number
 of elements of the FBM. \strong{Default doesn't initialize the matrix.}}
 
-\item{backingfile}{Path to the file storing the Big Matrix on disk.
-\strong{An extension ".bk" will be automatically added.}
-Default stores in the temporary directory.}
+\item{backingfile}{Path to the file storing the FBM data on disk.
+\strong{An extension ".bk" will be automatically added.} Default stores in the
+temporary directory, which you can change using global option "FBM.dir".}
 
 \item{create_bk}{Whether to create a backingfile (the default) or use an
 existing one (which should be named by the \code{backingfile} parameter and have
@@ -94,9 +94,9 @@ And some methods:
 \item \verb{add_columns(<ncol_add>)}: Add some columns to the FBM by appending the
 backingfile with some data. Returns the FBM invisibly.
 \item \verb{$bm()}: Get this object as a \code{filebacked.big.matrix}
-to be used by package {bigmemory}.
+to be used by package \{bigmemory\}.
 \item \verb{$bm.desc()}: Get this object as a \code{filebacked.big.matrix} descriptor
-to be used by package {bigmemory}.
+to be used by package \{bigmemory\}.
 \item \verb{$check_write_permissions()}: Error if the FBM is read-only.
 }
 }

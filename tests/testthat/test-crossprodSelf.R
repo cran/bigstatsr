@@ -53,14 +53,17 @@ test_that("equality with crossprod with half of the data", {
 ################################################################################
 
 test_that("equality with crossprod with half of the data", {
+
   ind <- sample(N, N / 2)
 
   for (t in TEST.TYPES) {
     X <- `if`(t == "raw", asFBMcode(x), big_copy(x, type = t))
 
     # no scaling
-    K <- big_crossprodSelf(X, ind.row = ind, block.size = 10)
+    tmp <- tempfile()
+    K <- big_crossprodSelf(X, ind.row = ind, block.size = 10, backingfile = tmp)
     expect_equal(K[], crossprod(X[ind, ]))
+    expect_identical(K$backingfile, normalizePath(paste0(tmp, ".bk")))
 
     # full scaling
     K2 <- big_crossprodSelf(X, fun.scaling = big_scale(), ind.row = ind,
@@ -70,6 +73,18 @@ test_that("equality with crossprod with half of the data", {
     expect_equal(attr(K2, "center"), attr(X.scaled, "scaled:center"))
     expect_equal(attr(K2, "scale"),  attr(X.scaled, "scaled:scale"))
   }
+})
+
+################################################################################
+
+test_that("we catch zero variance variables when scaling", {
+
+  X <- FBM(20, 20, init = rnorm(400))
+  expect_no_error(big_crossprodSelf(X, fun.scaling = custom_scaling))
+
+  X[, 1] <- 0
+  expect_error(big_crossprodSelf(X, fun.scaling = custom_scaling),
+               "Some variables have zero scaling")
 })
 
 ################################################################################

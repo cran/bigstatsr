@@ -52,16 +52,16 @@ You can use \code{\link[=covar_from_df]{covar_from_df()}} to convert from a data
 \item{scale}{Vector of same length of \code{ind.col} to divide from columns of \code{X}.}
 }
 \description{
-Easy-to-use, efficient, flexible and scalable statistical tools. Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping. It provides for instance matrix operations, Principal Component Analysis, sparse linear supervised models, utility functions and more <doi:10.1093/bioinformatics/bty185>.
+Easy-to-use, efficient, flexible and scalable statistical tools. Package bigstatsr provides and uses Filebacked Big Matrices via memory-mapping. It provides for instance matrix operations, Principal Component Analysis, sparse linear supervised models, utility functions and more \doi{10.1093/bioinformatics/bty185}.
 }
 \section{Matrix parallelization}{
 
 Large matrix computations are made block-wise and won't be parallelized
-in order to not have to reduce the size of these blocks.
-Instead, you may use \href{https://mran.microsoft.com/open/}{Microsoft R Open}
+in order to not have to reduce the size of these blocks. Instead, you can use
+the \href{https://forum.posit.co/t/intel-mkl-integration-to-r-on-windows/176071}{MKL}
 or OpenBLAS in order to accelerate these block matrix computations.
-You can also control the number of cores used with
-\code{bigparallelr::set_blas_ncores()}.
+You can control the number of cores used by these optimized matrix libraries
+with \code{bigparallelr::set_blas_ncores()}.
 }
 
 \seealso{

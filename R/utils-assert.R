@@ -4,6 +4,17 @@
 
 ################################################################################
 
+MSG_ZERO_SCALE <-
+  "Some variables have zero scaling; remove them before attempting to scale."
+
+################################################################################
+
+any_near0 <- function(x, tol = 1e-8) {
+  any(abs(x) < tol)
+}
+
+################################################################################
+
 as_vec <- function(x) {
   x2 <- drop(x)
   if (is.matrix(x2))

@@ -78,9 +78,9 @@ sub_bk <- function(path, replacement = "", stop_if_not_ext = TRUE) {
 #'   - `add_columns(<ncol_add>)`: Add some columns to the FBM by appending the
 #'     backingfile with some data. Returns the FBM invisibly.
 #'   - `$bm()`: Get this object as a `filebacked.big.matrix`
-#'     to be used by package {bigmemory}.
+#'     to be used by package \{bigmemory\}.
 #'   - `$bm.desc()`: Get this object as a `filebacked.big.matrix` descriptor
-#'     to be used by package {bigmemory}.
+#'     to be used by package \{bigmemory\}.
 #'   - `$check_write_permissions()`: Error if the FBM is read-only.
 #'
 #' @examples
@@ -110,6 +110,7 @@ sub_bk <- function(path, replacement = "", stop_if_not_ext = TRUE) {
 #' X[]  # access as standard R matrix
 #'
 #' @exportClass FBM
+#' @importFrom rmio file_create file_resize_off
 #'
 FBM_RC <- methods::setRefClass(
 
@@ -303,9 +304,9 @@ FBM_RC$lock("nrow", "type")
 #'   It is used in [package **bigsnpr**](https://goo.gl/pHCCmo).
 #' @param init Either a single value (e.g. `0`) or as many value as the number
 #'   of elements of the FBM. **Default doesn't initialize the matrix.**
-#' @param backingfile Path to the file storing the Big Matrix on disk.
-#'   **An extension ".bk" will be automatically added.**
-#'   Default stores in the temporary directory.
+#' @param backingfile Path to the file storing the FBM data on disk.
+#'   **An extension ".bk" will be automatically added.** Default stores in the
+#'   temporary directory, which you can change using global option "FBM.dir".
 #' @param create_bk Whether to create a backingfile (the default) or use an
 #'   existing one (which should be named by the `backingfile` parameter and have
 #'   an extension ".bk"). For example, this could be used to convert a

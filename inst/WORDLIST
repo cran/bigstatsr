@@ -26,10 +26,12 @@ bty
 cbind
 cdot
 CMSA
+Codecov
 confounders
 Crossprod
 crossprods
 didn
+dir
 doesn
 doi
 eigen
@@ -62,6 +64,7 @@ Lett
 loadings
 Mei
 mio
+MKL
 multiplot
 nb
 newcommand

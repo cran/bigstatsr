@@ -8,7 +8,8 @@ big_cor(
   X,
   ind.row = rows_along(X),
   ind.col = cols_along(X),
-  block.size = block_size(nrow(X))
+  block.size = block_size(nrow(X)),
+  backingfile = tempfile(tmpdir = getOption("FBM.dir"))
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ If not specified, all columns are used. \strong{Don't use negative indices.}}
 
 \item{block.size}{Maximum number of columns read at once.
 Default uses \link{block_size}.}
+
+\item{backingfile}{Path to the file storing the FBM data on disk.
+\strong{An extension ".bk" will be automatically added.} Default stores in the
+temporary directory, which you can change using global option "FBM.dir".}
 }
 \value{
 A temporary \link[=FBM-class]{FBM}, with the following two attributes:
@@ -36,11 +41,11 @@ Compute the (Pearson) correlation matrix of a Filebacked Big Matrix.
 \section{Matrix parallelization}{
 
 Large matrix computations are made block-wise and won't be parallelized
-in order to not have to reduce the size of these blocks.
-Instead, you may use \href{https://mran.microsoft.com/open/}{Microsoft R Open}
+in order to not have to reduce the size of these blocks. Instead, you can use
+the \href{https://forum.posit.co/t/intel-mkl-integration-to-r-on-windows/176071}{MKL}
 or OpenBLAS in order to accelerate these block matrix computations.
-You can also control the number of cores used with
-\code{bigparallelr::set_blas_ncores()}.
+You can control the number of cores used by these optimized matrix libraries
+with \code{bigparallelr::set_blas_ncores()}.
 }
 
 \examples{

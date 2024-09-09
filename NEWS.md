@@ -1,3 +1,19 @@
+## bigstatsr 1.6.1
+
+- Remove {dplyr} dependency for internal function `any_near0()`.
+
+## bigstatsr 1.6.0
+
+- Fix conversion from `NA_real` to FBM type integer on new Macs.
+
+## bigstatsr 1.5.14
+
+- Error when variables with a zero scaling are used in e.g. `big_randomSVD()` and `big_crossprodSelf()` (#52).
+
+## bigstatsr 1.5.13
+
+- Add parameter `backingfile` to `big_crossprodSelf()` and `big_cor()` (#170).
+
 ## bigstatsr 1.5.11
 
 - Make sure not to use two levels of parallelism in `big_univLogReg()` (#137).
